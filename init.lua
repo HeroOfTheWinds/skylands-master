@@ -139,6 +139,14 @@ minetest.register_node("skylands:cinder_block", {
 	groups = {cracky=3, crumbly=1},
 	sounds = default.node_sound_stone_defaults(),
 })
+--Craft to create cinder blocks from 4 cinders
+minetest.register_craft({
+	output = "skylands:cinder_block",
+	recipe = {
+		{"skylands:cinder", "skylands:cinder"},
+		{"skylands:cinder", "skylands:cinder"}
+	}
+})
 
 --vars for it moreblocks and moreores are installed
 local mblocks = false
