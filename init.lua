@@ -5,7 +5,7 @@
 
 -- Parameters
 
-local YMIN = 128 -- Approximate realm limits.
+local YMIN = 700 -- Approximate realm limits.
 local YMAX = 33000
 local XMIN = -33000
 local XMAX = 33000
@@ -14,22 +14,27 @@ local ZMAX = 33000
 
 local FLOW = 256 --for pools
 
-local CHUINT = 2 -- Chunk interval for floatland layers
+local CHUINT = 1 -- Chunk interval for floatland layers
 local WAVAMP = 16 -- Structure wave amplitude
 local HISCAL = 24 -- Upper structure vertical scale
 local LOSCAL = 24 -- Lower structure vertical scale
 local HIEXP = 0.5 -- Upper structure density gradient exponent
 local LOEXP = 0.5 -- Lower structure density gradient exponent
-local CLUSAV = 0.5 -- Large scale variation average
+local CLUSAV = -0.4 -- Large scale variation average
 local CLUSAM = 0.5 -- Large scale variation amplitude
 local DIRTHR = 0.04 -- Dirt density threshold
 local STOTHR = 0.08 -- Stone density threshold
 local STABLE = 2 -- Minimum number of stacked stone nodes in column for dirt / sand on top
 
 local APPCHA = 0.02 -- Appletree chance
+local PINCHA = 0.015 -- Pine tree chance
+local SPINCHA = 0.01 -- Pine tree chance for snow plains
+local ACACHA = 0.01 -- Acacia tree chance
+local JUNTCHA = 0.04 -- Jungle tree chance
 local FLOCHA = 0.02 -- Flower chance
 local GRACHA = 0.11 -- Grass chance
 local CACCHA = 0.02 -- Cactus chance
+local JUNGCHA = 0.2 -- Junglegrass chance
 local FIRCHA = 0.03 -- Fire chance
 local LAKCHA = 0.002
 local ORECHA = 1 / (6 * 6 * 6)
@@ -89,186 +94,34 @@ local np_biome = {
 	persist = 0.5
 }
 
+-- 3D noise for temperature
+
+local np_temp = {
+	offset = 0,
+	scale = 1,
+	spread = {x=512, y=512, z=512},
+	seed = 9130,
+	octaves = 3,
+	persist = 0.5
+}
+
+-- 3D noise for humidity
+
+local np_humid = {
+	offset = 0,
+	scale = 1,
+	spread = {x=512, y=512, z=512},
+	seed = -55500,
+	octaves = 3,
+	persist = 0.5
+}
+
 -- Stuff
 
 skylands = {}
 
--- Nodes
-
-minetest.register_node("skylands:stone", {
-	description = "FLI Stone",
-	tiles = {"default_stone.png"},
-	is_ground_content = false, -- stops cavegen removing this node
-	groups = {cracky=3},
-	drop = "default:cobble",
-	sounds = default.node_sound_stone_defaults(),
-})
-
-minetest.register_node("skylands:desertstone", {
-	description = "FLI Desert Stone",
-	tiles = {"default_desert_stone.png"},
-	is_ground_content = false, -- stops cavegen removing this node
-	groups = {cracky=3},
-	drop = "default:desert_stone",
-	sounds = default.node_sound_stone_defaults(),
-})
-
-minetest.register_node("skylands:obsidian", {
-	description = "FLI Obsidian",
-	tiles = {"default_obsidian.png"},
-	is_ground_content = false,
-	sounds = default.node_sound_stone_defaults(),
-	groups = {cracky=1,level=2},
-	drop = "default:obsidian",
-})
---NEW! Cinder for volcanic biomes
-minetest.register_node("skylands:cinder", {
-	description = "Cinder",
-	tiles = {"skylands_cinder.png"},
-	is_ground_content = true,
-	groups = {crumbly=2, falling_node=1},
-	sounds = default.node_sound_dirt_defaults({
-		footstep = {name="default_gravel_footstep", gain=0.5},
-		dug = {name="default_gravel_footstep", gain=1.0},
-	}),
-})
---NEW! Cinder block crafted from cinder
-minetest.register_node("skylands:cinder_block", {
-	description = "Cinder Block",
-	tiles = {"skylands_cinder_block.png"},
-	groups = {cracky=3, crumbly=1},
-	sounds = default.node_sound_stone_defaults(),
-})
---Craft to create cinder blocks from 4 cinders
-minetest.register_craft({
-	output = "skylands:cinder_block",
-	recipe = {
-		{"skylands:cinder", "skylands:cinder"},
-		{"skylands:cinder", "skylands:cinder"}
-	}
-})
-
---vars for it moreblocks and moreores are installed
-local mblocks = false
-local mores = false
-
---moreblocks nodes - iron_stone redefined so that cavegen doesn't destroy
-minetest.register_node("skylands:coal_stone", {
-	description = "FLI Coal Stone",
-	tiles = {"moreblocks_coal_stone.png"},
-	--is_ground_content = false,
-	groups = {cracky=3},
-	drop = "moreblocks:coal_stone",
-})
-
-minetest.register_node("skylands:iron_stone", {
-	description = "FLI Iron Stone",
-	tiles = {"moreblocks_iron_stone.png"},
-	is_ground_content = false,
-	groups = {cracky=3},
-	drop = "moreblocks:iron_stone",
-})
---define special flame so that it does not expire
-minetest.register_node("skylands:constant_flame", {
-	description = "Fire",
-	drawtype = "plantlike",
-	tiles = {{
-		name="fire_basic_flame_animated.png",
-		animation={type="vertical_frames", aspect_w=16, aspect_h=16, length=1},
-	}},
-	inventory_image = "fire_basic_flame.png",
-	light_source = 14,
-	groups = {igniter=2,dig_immediate=3,hot=3},
-	drop = '',
-	walkable = false,
-	buildable_to = true,
-	damage_per_second = 4,
-	
-	after_place_node = function(pos, placer)
-		fire.on_flame_add_at(pos)
-	end,
-	
-	after_dig_node = function(pos, oldnode, oldmetadata, digger)
-		fire.on_flame_remove_at(pos)
-	end,
-})
-
---Define the ores so that they propagate with the abm
-minetest.register_node("skylands:stone_with_coal", {
-	description = "Coal Ore",
-	tiles = {"default_stone.png^default_mineral_coal.png"},
-	is_ground_content = true,
-	groups = {cracky=3, skyores=1},
-	drop = 'default:coal_lump',
-	sounds = default.node_sound_stone_defaults(),
-})
-
-minetest.register_node("skylands:stone_with_iron", {
-	description = "Iron Ore",
-	tiles = {"default_stone.png^default_mineral_iron.png"},
-	is_ground_content = true,
-	groups = {cracky=2, skyores=1},
-	drop = 'default:iron_lump',
-	sounds = default.node_sound_stone_defaults(),
-})
-
-minetest.register_node("skylands:stone_with_copper", {
-	description = "Copper Ore",
-	tiles = {"default_stone.png^default_mineral_copper.png"},
-	is_ground_content = true,
-	groups = {cracky=2, skyores=1},
-	drop = 'default:copper_lump',
-	sounds = default.node_sound_stone_defaults(),
-})
-
-minetest.register_node("skylands:stone_with_mese", {
-	description = "Mese Ore",
-	tiles = {"default_stone.png^default_mineral_mese.png"},
-	is_ground_content = true,
-	groups = {cracky=1, skyores=1},
-	drop = "default:mese_crystal",
-	sounds = default.node_sound_stone_defaults(),
-})
-
-minetest.register_node("skylands:stone_with_gold", {
-	description = "Gold Ore",
-	tiles = {"default_stone.png^default_mineral_gold.png"},
-	is_ground_content = true,
-	groups = {cracky=2, skyores=1},
-	drop = "default:gold_lump",
-	sounds = default.node_sound_stone_defaults(),
-})
-	
-minetest.register_node("skylands:stone_with_diamond", {
-	description = "Diamond Ore",
-	tiles = {"default_stone.png^default_mineral_diamond.png"},
-	is_ground_content = true,
-	groups = {cracky=1, skyores=1},
-	drop = "default:diamond",
-	sounds = default.node_sound_stone_defaults(),
-})
-minetest.register_node("skylands:mineral_tin", {
-	description = "Tin Ore",
-	tiles = {"default_stone.png^moreores_mineral_tin.png"},
-	groups = {cracky=3, skyores=1},
-	sounds = default_stone_sounds,
-	drop = "moreores:tin_lump"
-})
-minetest.register_node("skylands:mineral_silver", {
-	description = "Silver Ore",
-	tiles = {"default_stone.png^moreores_mineral_silver.png"},
-	groups = {cracky=3, skyores=1},
-	sounds = default_stone_sounds,
-	drop = "moreores:silver_lump"
-})
-minetest.register_node("skylands:mineral_mithril", {
-	description = "Mithril Ore",
-	tiles = {"default_stone.png^moreores_mineral_mithril.png"},
-	groups = {cracky=3, skyores=1},
-	sounds = default_stone_sounds,
-	drop = "moreores:mithril_lump"
-})
-
+dofile(minetest.get_modpath("skylands").."/nodes.lua")
+dofile(minetest.get_modpath("skylands").."/wheat.lua")
 
 -- Functions
 
@@ -312,6 +165,26 @@ local function skylands_grass(data, vi)
 		data[vi] = c_grass4
 	else
 		data[vi] = c_grass5
+	end
+end
+
+local function skylands_wheat(data, vi)
+	local c_wgrass1 = minetest.get_content_id("skylands:wheat_grass_1")
+	local c_wgrass2 = minetest.get_content_id("skylands:wheat_grass_2")
+	local c_wgrass3 = minetest.get_content_id("skylands:wheat_grass_3")
+	local c_wgrass4 = minetest.get_content_id("skylands:wheat_grass_4")
+	local c_wgrass5 = minetest.get_content_id("skylands:wheat_grass_5")
+	local rand = math.random(5)
+	if rand == 1 then
+		data[vi] = c_wgrass1
+	elseif rand == 2 then
+		data[vi] = c_wgrass2
+	elseif rand == 3 then
+		data[vi] = c_wgrass3
+	elseif rand == 4 then
+		data[vi] = c_wgrass4
+	else
+		data[vi] = c_wgrass5
 	end
 end
 
@@ -388,6 +261,11 @@ function highlandpools_remplant(x, y, z, area, data)
 	local c_grass3 = minetest.get_content_id("default:grass_3")
 	local c_grass4 = minetest.get_content_id("default:grass_4")
 	local c_grass5 = minetest.get_content_id("default:grass_5")
+	local c_wgrass1 = minetest.get_content_id("skylands:wheat_grass_1")
+	local c_wgrass2 = minetest.get_content_id("skylands:wheat_grass_2")
+	local c_wgrass3 = minetest.get_content_id("skylands:wheat_grass_3")
+	local c_wgrass4 = minetest.get_content_id("skylands:wheat_grass_4")
+	local c_wgrass5 = minetest.get_content_id("skylands:wheat_grass_5")
 	local c_danwhi = minetest.get_content_id("flowers:dandelion_white")
 	local c_danyel = minetest.get_content_id("flowers:dandelion_yellow")
 	local c_rose = minetest.get_content_id("flowers:rose")
@@ -396,6 +274,8 @@ function highlandpools_remplant(x, y, z, area, data)
 	local c_viola = minetest.get_content_id("flowers:viola")
 	local c_cactus = minetest.get_content_id("default:cactus")
 	local c_dry_shrub = minetest.get_content_id("default:dry_shrub")
+	local c_golgrass = minetest.get_content_id("skylands:goldengrass")
+	local c_jungrass = minetest.get_content_id("default:junglegrass")
 	local c_air = minetest.get_content_id("air")
 	local c_water = minetest.get_content_id("default:water_source")
 	for j = 1, 7 do
@@ -407,6 +287,13 @@ function highlandpools_remplant(x, y, z, area, data)
 		or data[vi] == c_grass3
 		or data[vi] == c_grass4
 		or data[vi] == c_grass5
+		or data[vi] == c_wgrass1
+		or data[vi] == c_wgrass2
+		or data[vi] == c_wgrass3
+		or data[vi] == c_wgrass4
+		or data[vi] == c_wgrass5
+		or data[vi] == c_golgrass
+		or data[vi] == c_jungrass
 		or data[vi] == c_danwhi
 		or data[vi] == c_danyel
 		or data[vi] == c_rose
@@ -429,6 +316,13 @@ function highlandpools_remplant(x, y, z, area, data)
 		or data[vi] == c_grass3
 		or data[vi] == c_grass4
 		or data[vi] == c_grass5
+		or data[vi] == c_wgrass1
+		or data[vi] == c_wgrass2
+		or data[vi] == c_wgrass3
+		or data[vi] == c_wgrass4
+		or data[vi] == c_wgrass5
+		or data[vi] == c_golgrass
+		or data[vi] == c_jungrass
 		or data[vi] == c_danwhi
 		or data[vi] == c_danyel
 		or data[vi] == c_rose
@@ -444,17 +338,163 @@ function highlandpools_remplant(x, y, z, area, data)
 	end
 end
 
+
+--watershed functions
+function skylands_pinetree(x, y, z, area, data)
+	local c_wspitree = minetest.get_content_id("skylands:pinetree")
+	local c_wsneedles = minetest.get_content_id("skylands:needles")
+	local c_snowblock = minetest.get_content_id("default:snowblock")
+	for j = -4, 14 do
+		if j == 3 or j == 6 or j == 9 or j == 12 then
+			for i = -2, 2 do
+			for k = -2, 2 do
+				if math.abs(i) == 2 or math.abs(k) == 2 then
+					if math.random(7) ~= 2 then
+						local vil = area:index(x + i, y + j, z + k)
+						data[vil] = c_wsneedles
+						local vila = area:index(x + i, y + j + 1, z + k)
+						data[vila] = c_snowblock
+					end
+				end
+			end
+			end
+		elseif j == 4 or j == 7 or j == 10 then
+			for i = -1, 1 do
+			for k = -1, 1 do
+				if not (i == 0 and j == 0) then
+					if math.random(11) ~= 2 then
+						local vil = area:index(x + i, y + j, z + k)
+						data[vil] = c_wsneedles
+						local vila = area:index(x + i, y + j + 1, z + k)
+						data[vila] = c_snowblock
+					end
+				end
+			end
+			end
+		elseif j == 13 then
+			for i = -1, 1 do
+			for k = -1, 1 do
+				if not (i == 0 and j == 0) then
+					local vil = area:index(x + i, y + j, z + k)
+					data[vil] = c_wsneedles
+					local vila = area:index(x + i, y + j + 1, z + k)
+					data[vila] = c_wsneedles
+					local vilaa = area:index(x + i, y + j + 2, z + k)
+					data[vilaa] = c_snowblock
+				end
+			end
+			end
+		end
+		local vit = area:index(x, y + j, z)
+		data[vit] = c_wspitree
+	end
+	local vil = area:index(x, y + 15, z)
+	local vila = area:index(x, y + 16, z)
+	local vilaa = area:index(x, y + 17, z)
+	data[vil] = c_wsneedles
+	data[vila] = c_wsneedles
+	data[vilaa] = c_snowblock
+end
+
+function skylands_jungletree(x, y, z, area, data)
+	local c_juntree = minetest.get_content_id("default:jungletree")
+	local c_wsjunleaf = minetest.get_content_id("default:jungleleaves")
+	local c_vine = minetest.get_content_id("skylands:vine")
+	local top = math.random(17,23)
+	local branch = math.floor(top * 0.6)
+	for j = -5, top do
+		if j == top or j == top - 1 or j == branch + 1 or j == branch + 2 then
+			for i = -2, 2 do -- leaves
+			for k = -2, 2 do
+				local vi = area:index(x + i, y + j, z + k)
+				if math.random(5) ~= 2 then
+					data[vi] = c_wsjunleaf
+				end
+			end
+			end
+		elseif j == top - 2 or j == branch then -- branches
+			for i = -1, 1 do
+			for k = -1, 1 do
+				if math.abs(i) + math.abs(k) == 2 then
+					local vi = area:index(x + i, y + j, z + k)
+					data[vi] = c_juntree
+				end
+			end
+			end
+		end
+		if j >= 0 and j <= top - 3 then -- climbable nodes
+			for i = -1, 1 do
+			for k = -1, 1 do
+				if math.abs(i) + math.abs(k) == 1 then
+					local vi = area:index(x + i, y + j, z + k)
+					data[vi] = c_vine
+				end
+			end
+			end
+		end
+		if j <= top - 3 then -- trunk
+			local vi = area:index(x, y + j, z)
+			data[vi] = c_juntree
+		end
+	end
+end
+
+function skylands_acaciatree(x, y, z, area, data)
+	local c_wsactree = minetest.get_content_id("skylands:acaciatree")
+	local c_wsacleaf = minetest.get_content_id("skylands:acacialeaf")
+	for j = -3, 6 do
+		if j == 6 then
+			for i = -4, 4 do
+			for k = -4, 4 do
+				if not (i == 0 or k == 0) then
+					if math.random(7) ~= 2 then
+						local vil = area:index(x + i, y + j, z + k)
+						data[vil] = c_wsacleaf
+					end
+				end
+			end
+			end
+		elseif j == 5 then
+			for i = -2, 2, 4 do
+			for k = -2, 2, 4 do
+				local vit = area:index(x + i, y + j, z + k)
+				data[vit] = c_wsactree
+			end
+			end
+		elseif j == 4 then
+			for i = -1, 1 do
+			for k = -1, 1 do
+				if math.abs(i) + math.abs(k) == 2 then
+					local vit = area:index(x + i, y + j, z + k)
+					data[vit] = c_wsactree
+				end
+			end
+			end
+		else
+			local vit = area:index(x, y + j, z)
+			data[vit] = c_wsactree
+		end
+	end
+end
+
+
+--vars for it moreblocks and moreores are installed
+local mblocks = false
+local mores = false
+
+
+
 -- On generated function
 
 minetest.register_on_generated(function(minp, maxp, seed)
 	
---	if (minetest.get_modpath("moreblocks")) then
+	if (minetest.get_modpath("moreblocks")) then
 		--let the generator know it can use moreblocks
 		mblocks = minetest.get_modpath("moreblocks")
---	end
---	if (minetest.get_modpath("moreores")) then
+	end
+	if (minetest.get_modpath("moreores")) then
 		mores = minetest.get_modpath("moreores")
---	end
+	end
 
 	if minp.x < XMIN or maxp.x > XMAX
 	or minp.y < YMIN or maxp.y > YMAX
@@ -488,6 +528,9 @@ minetest.register_on_generated(function(minp, maxp, seed)
 	local c_stoiron = minetest.get_content_id("skylands:stone_with_iron")
 	local c_stocoal = minetest.get_content_id("skylands:stone_with_coal")
 	local c_grass = minetest.get_content_id("default:dirt_with_grass")
+	local c_golgrass = minetest.get_content_id("skylands:goldengrass")
+	local c_jungrass = minetest.get_content_id("default:junglegrass")
+	local c_dryshrub = minetest.get_content_id("default:dry_shrub")
 	local c_dirt = minetest.get_content_id("default:dirt")
 	local c_desand = minetest.get_content_id("default:desert_sand")
 	--Newly added
@@ -509,6 +552,11 @@ minetest.register_on_generated(function(minp, maxp, seed)
 	local c_flistone = minetest.get_content_id("skylands:stone")
 	local c_flidestone = minetest.get_content_id("skylands:desertstone")
 	
+	--watershed nodes for more biomes
+	local c_icydirt = minetest.get_content_id("skylands:icydirt")
+	local c_drygrass = minetest.get_content_id("skylands:drygrass")
+	local c_permafrost = minetest.get_content_id("skylands:permafrost")
+	
 	local sidelen = x1 - x0 + 1
 	local chulens = {x=sidelen, y=sidelen, z=sidelen}
 	local minposxyz = {x=x0, y=y0, z=z0}
@@ -520,6 +568,9 @@ minetest.register_on_generated(function(minp, maxp, seed)
 	
 	local nvals_wave = minetest.get_perlin_map(np_wave, chulens):get2dMap_flat(minposxz)
 	local nvals_biome = minetest.get_perlin_map(np_biome, chulens):get2dMap_flat({x=x0+150, y=z0+50})
+	
+	local nvals_temp = minetest.get_perlin_map(np_temp, chulens):get3dMap_flat(minposxyz)
+	local nvals_humid = minetest.get_perlin_map(np_humid, chulens):get3dMap_flat(minposxyz)
 	
 	local nixyz = 1
 	local nixz = 1
@@ -553,9 +604,74 @@ minetest.register_on_generated(function(minp, maxp, seed)
 				local density = nvals_float[nixyz] - grad + CLUSAV + nvals_cluster[nixyz] * CLUSAM
 				if density > 0 and density < 0.7 then -- if floatland shell
 					if nvals_caves[nixyz] - density > -0.7 then -- if no cave
+					
+						n_temp = nvals_temp[nixyz]
+						n_humid = nvals_humid[nixyz]
+						local biome = false
+						if n_temp < -0.35 then
+							if n_humid < -0.35 then
+								biome = 1 -- tundra
+							elseif n_humid > 0.35 then
+								biome = 3 -- taiga
+							else
+								biome = 2 -- snowy plains
+							end
+						elseif n_temp > 0.35 then
+							if n_humid < -0.35 then
+								biome = 7 -- desert
+							elseif n_humid > 0.35 then
+								biome = 9 -- rainforest
+							else
+								biome = 8 -- savanna
+							end
+						else
+							if n_humid < -0.35 then
+								biome = 4 -- dry grassland
+							elseif n_humid > 0.35 then
+								if n_humid > 0.55 and n_humid < 0.75 then
+									biome = 10 -- wheat field
+								else
+									biome = 6 -- deciduous forest
+								end
+							else
+								biome = 5 -- grassland
+							end
+						end
+						
 						if y > flomid and density < STOTHR and stable[si] >= STABLE then
-							if nvals_biome[nixz] > 0.15 and nvals_biome[nixz] <= 0.65 then -- fine materials
+							--if nvals_biome[nixz] > 0.15 and nvals_biome[nixz] <= 0.65 then -- fine materials
+							if biome == 7 then
 								data[vi] = c_desand
+								dirt[si] = dirt[si] + 1
+							elseif biome == 4 or biome == 8 then --dry grassland or savanna
+								if density < DIRTHR then
+									data[vi] = c_drygrass
+								else
+									data[vi] = c_dirt
+								end
+								dirt[si] = dirt[si] + 1
+							
+							--snow biome
+							elseif biome == 2 then --nvals_biome[nixz] < -0.45 then
+								if density < DIRTHR then
+									data[vi] = c_snow
+								else
+									data[vi] = c_dirt
+								end
+								dirt[si] = dirt[si] + 1
+							elseif biome == 1 then --tundra
+								if density < DIRTHR then
+									data[vi] = c_permafrost
+								else
+									data[vi] = c_permafrost
+								end
+								dirt[si] = dirt[si] + 1
+							elseif biome == 3 then --taiga
+								if density < DIRTHR then
+									data[vi] = c_icydirt
+								else
+									data[vi] = c_dirt
+								end
 								dirt[si] = dirt[si] + 1
 							--volcano biome
 							elseif nvals_biome[nixz] > 0.65 then
@@ -577,14 +693,6 @@ minetest.register_on_generated(function(minp, maxp, seed)
 									end
 								end
 								dirt[si] = dirt[si] + 1
-							--snow biome
-							elseif nvals_biome[nixz] < -0.45 then
-								if density < DIRTHR then
-									data[vi] = c_snow
-								else
-									data[vi] = c_dirt
-								end
-								dirt[si] = dirt[si] + 1
 							else
 								if density < DIRTHR then
 									data[vi] = c_grass
@@ -594,11 +702,19 @@ minetest.register_on_generated(function(minp, maxp, seed)
 								dirt[si] = dirt[si] + 1
 							end
 						else
-							if nvals_biome[nixz] > 0.15 and nvals_biome[nixz] <= 0.65 then -- stone
+							if biome == 7 then--nvals_biome[nixz] > 0.15 and nvals_biome[nixz] <= 0.65 then -- stone
 								data[vi] = c_flidestone
 							elseif nvals_biome[nixz] > 0.65 then
-								data[vi] = c_fliobsidian
-							elseif nvals_biome[nixz] < -0.45 then
+								if nvals_biome[nixz] > 0.80 then
+									data[vi] = c_fliobsidian
+								else
+									if mblocks then
+										data[vi] = c_coalstone
+									else
+										data[vi] = c_fliobsidian
+									end
+								end
+							elseif biome == 2 then--nvals_biome[nixz] < -0.45 then
 								if mblocks then
 									data[vi] = c_ironstone
 								else
@@ -648,12 +764,50 @@ minetest.register_on_generated(function(minp, maxp, seed)
 							end
 							stable[si] = stable[si] + 1
 						end
+						
+						
+						
 					else -- cave
 						stable[si] = 0
 					end
 				elseif y > flomid and density < 0 and dirt[si] >= 1 then -- node above surface dirt
-					if nvals_biome[nixz] > 0.15 and nvals_biome[nixz] <= 0.65 then --desert
-						if math.random() < CACCHA then
+
+					n_temp = nvals_temp[nixyz]
+					n_humid = nvals_humid[nixyz]
+					local biome = false
+					if n_temp < -0.35 then
+						if n_humid < -0.35 then
+							biome = 1 -- tundra
+						elseif n_humid > 0.35 then
+							biome = 3 -- taiga
+						else
+							biome = 2 -- snowy plains
+						end
+					elseif n_temp > 0.35 then
+						if n_humid < -0.35 then
+							biome = 7 -- desert
+						elseif n_humid > 0.35 then
+							biome = 9 -- rainforest
+						else
+							biome = 8 -- savanna
+						end
+					else
+						if n_humid < -0.35 then
+							biome = 4 -- dry grassland
+						elseif n_humid > 0.35 then
+							if n_humid > 0.55 and n_humid < 0.75 then
+								biome = 10 --wheat field
+							else
+								biome = 6 -- deciduous forest
+							end
+						else
+							biome = 5 -- grassland
+						end
+					end
+								
+				
+					if biome == 7 then --desert
+						if dirt[si] >= 2 and math.random() < CACCHA then
 							skylands_desertplant(data, vi)
 						end
 						dirt[si] = 0
@@ -662,17 +816,52 @@ minetest.register_on_generated(function(minp, maxp, seed)
 							data[vi] = c_fire
 						end
 						dirt[si] = 0
-					elseif nvals_biome[nixz] <= 0.15 then --regular and snow
-						if dirt[si] >= 2 and math.random() < APPCHA then
+					elseif biome == 5 then --grassland
+						if dirt[si] >= 2 and math.random() < (APPCHA * 0.5) then
 							skylands_appletree(x, y, z, area, data)
-						elseif nvals_biome[nixz] >= -0.45 then --not snow
-							if math.random() < FLOCHA then
-								skylands_flower(data, vi)
-							elseif math.random() < GRACHA then
-								skylands_grass(data, vi)
-							end
+						elseif math.random() < FLOCHA then
+							skylands_flower(data, vi)
+						elseif math.random() < GRACHA then
+							skylands_grass(data, vi)
 						end
 						dirt[si] = 0
+					elseif biome == 10 then --wheat field
+						skylands_wheat(data, vi)
+						dirt[si] = 0
+					elseif biome == 6 then --deciduous forest
+						if dirt[si] >= 2 and math.random() < APPCHA then
+							skylands_appletree(x, y, z, area, data)
+						end
+						dirt[si] = 0
+					elseif biome == 4 then -- drylands
+						if dirt[si] >= 2 and math.random() < GRACHA then
+							data[vi] = c_dryshrub
+						end
+						dirt[si] = 0
+					elseif biome == 3 then --taiga
+						if dirt[si] >= 2 and math.random() < PINCHA then
+							skylands_pinetree(x, y, z, area, data)
+						end
+						dirt[si] = 0
+					elseif biome == 2 then --snowy plains
+						if dirt[si] >= 2 and math.random() < SPINCHA then
+							skylands_pinetree(x, y, z, area, data)
+						end
+						dirt[si] = 0
+					elseif biome == 8 then --savanna
+						if dirt[si] >= 2 and math.random() < ACACHA then
+							skylands_acaciatree(x, y, z, area, data)
+						elseif dirt[si] >= 2 and math.random() < GRACHA then
+							data[vi] = c_golgrass
+						end
+						dirt[si] = 0
+					elseif biome == 9 then --rainforest
+						if dirt[si] >= 2 and math.random() < JUNTCHA then
+							skylands_jungletree(x, y, z, area, data)
+						elseif math.random() < JUNGCHA then
+							data[vi] = c_jungrass
+						end
+						dirt[si] = 0						
 					end
 				else -- atmosphere
 					stable[si] = 0
