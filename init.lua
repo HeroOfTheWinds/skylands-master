@@ -1,6 +1,6 @@
 -- skylands 2.0 by HeroOfTheWinds, based on floatindev 0.2.0 by paramat
 -- For latest stable Minetest and back to 0.4.8
--- Depends default, fire, moreblocks?, moreores?
+-- Depends default, fire, moreblocks?, moreores?, mesecons?
 -- License: code WTFPL
 
 -- Parameters
@@ -15,9 +15,9 @@ local ZMAX = 33000
 local FLOW = 256 --for pools
 
 local CHUINT = 1 -- Chunk interval for floatland layers
-local WAVAMP = 16 -- Structure wave amplitude
-local HISCAL = 24 -- Upper structure vertical scale
-local LOSCAL = 24 -- Lower structure vertical scale
+local WAVAMP = 24 --16 -- Structure wave amplitude
+local HISCAL = 32 --24 -- Upper structure vertical scale
+local LOSCAL = 24 --24 -- Lower structure vertical scale
 local HIEXP = 0.5 -- Upper structure density gradient exponent
 local LOEXP = 0.5 -- Lower structure density gradient exponent
 local CLUSAV = -0.4 -- Large scale variation average
@@ -47,7 +47,7 @@ local np_float = {
 	spread = {x=256, y=256, z=256},
 	seed = 277777979,
 	octaves = 6,
-	persist = 0.6
+	persist = 0.67--6
 }
 
 -- 3D noise for caves
@@ -55,10 +55,10 @@ local np_float = {
 local np_caves = {
 	offset = 0,
 	scale = 1,
-	spread = {x=8, y=8, z=8},
+	spread = {x=16, y=16, z=16},
 	seed = -89000,
-	octaves = 2,
-	persist = 0.5
+	octaves = 2,--2
+	persist = 0.5--0.5
 }
 
 -- 3D noise for large scale floatland size/density variation
@@ -122,379 +122,24 @@ skylands = {}
 
 dofile(minetest.get_modpath("skylands").."/nodes.lua")
 dofile(minetest.get_modpath("skylands").."/wheat.lua")
-
--- Functions
-
-local function skylands_appletree(x, y, z, area, data)
-
-	local c_tree = minetest.get_content_id("default:tree")
-	local c_apple = minetest.get_content_id("default:apple")
-	local c_leaves = minetest.get_content_id("default:leaves")
-	for j = -2, 4 do
-		if j >= 1 then
-			for i = -2, 2 do
-			for k = -2, 2 do
-				local vi = area:index(x + i, y + j + 1, z + k)
-				if math.random(48) == 2 then
-					data[vi] = c_apple
-				elseif math.random(3) ~= 2 then
-					data[vi] = c_leaves
-				end
-			end
-			end
-		end
-		local vi = area:index(x, y + j, z)
-		data[vi] = c_tree
-	end
-end
-
-local function skylands_grass(data, vi)
-	local c_grass1 = minetest.get_content_id("default:grass_1")
-	local c_grass2 = minetest.get_content_id("default:grass_2")
-	local c_grass3 = minetest.get_content_id("default:grass_3")
-	local c_grass4 = minetest.get_content_id("default:grass_4")
-	local c_grass5 = minetest.get_content_id("default:grass_5")
-	local rand = math.random(5)
-	if rand == 1 then
-		data[vi] = c_grass1
-	elseif rand == 2 then
-		data[vi] = c_grass2
-	elseif rand == 3 then
-		data[vi] = c_grass3
-	elseif rand == 4 then
-		data[vi] = c_grass4
-	else
-		data[vi] = c_grass5
-	end
-end
-
-local function skylands_wheat(data, vi)
-	local c_wgrass1 = minetest.get_content_id("skylands:wheat_grass_1")
-	local c_wgrass2 = minetest.get_content_id("skylands:wheat_grass_2")
-	local c_wgrass3 = minetest.get_content_id("skylands:wheat_grass_3")
-	local c_wgrass4 = minetest.get_content_id("skylands:wheat_grass_4")
-	local c_wgrass5 = minetest.get_content_id("skylands:wheat_grass_5")
-	local rand = math.random(5)
-	if rand == 1 then
-		data[vi] = c_wgrass1
-	elseif rand == 2 then
-		data[vi] = c_wgrass2
-	elseif rand == 3 then
-		data[vi] = c_wgrass3
-	elseif rand == 4 then
-		data[vi] = c_wgrass4
-	else
-		data[vi] = c_wgrass5
-	end
-end
-
-local function skylands_flower(data, vi)
-	local c_danwhi = minetest.get_content_id("flowers:dandelion_white")
-	local c_danyel = minetest.get_content_id("flowers:dandelion_yellow")
-	local c_rose = minetest.get_content_id("flowers:rose")
-	local c_tulip = minetest.get_content_id("flowers:tulip")
-	local c_geranium = minetest.get_content_id("flowers:geranium")
-	local c_viola = minetest.get_content_id("flowers:viola")
-	local rand = math.random(6)
-	if rand == 1 then
-		data[vi] = c_danwhi
-	elseif rand == 2 then
-		data[vi] = c_rose
-	elseif rand == 3 then
-		data[vi] = c_tulip
-	elseif rand == 4 then
-		data[vi] = c_danyel
-	elseif rand == 5 then
-		data[vi] = c_geranium
-	else
-		data[vi] = c_viola
-	end
-end
-
-local function skylands_desertplant(data, vi)
-	local c_cactus = minetest.get_content_id("default:cactus")
-	local c_dry_shrub = minetest.get_content_id("default:dry_shrub")
-	local rand = math.random(2)
-	if rand == 1 then
-		data[vi] = c_dry_shrub
-	else
-		data[vi] = c_cactus
-	end
-end
-
---function from highlandpools mod
-function highlandpools_remtree(x, y, z, area, data)
-	local c_tree = minetest.get_content_id("default:tree")
-	local c_apple = minetest.get_content_id("default:apple")
-	local c_leaves = minetest.get_content_id("default:leaves")
-	local c_air = minetest.get_content_id("air")
-	for j = 1, 7 do
-	for i = -2, 2 do
-	for k = -2, 2 do
-		local vi = area:index(x+i, y+j, z+k)
-		if data[vi] == c_tree
-		or data[vi] == c_apple
-		or data[vi] == c_leaves then
-			data[vi] = c_air
-		end
-	end
-	end
-	end
-	for j = 1, 7 do
-	for i = -2, 2 do
-	for k = -2, 2 do
-		local vi = area:index(x+i, y-j, z+k)
-		if data[vi] == c_tree
-		or data[vi] == c_apple
-		or data[vi] == c_leaves then
-			data[vi] = c_air
-		end
-	end
-	end
-	end
-end
-
---function to remove flowers and grass
-function highlandpools_remplant(x, y, z, area, data)
-	local c_grass1 = minetest.get_content_id("default:grass_1")
-	local c_grass2 = minetest.get_content_id("default:grass_2")
-	local c_grass3 = minetest.get_content_id("default:grass_3")
-	local c_grass4 = minetest.get_content_id("default:grass_4")
-	local c_grass5 = minetest.get_content_id("default:grass_5")
-	local c_wgrass1 = minetest.get_content_id("skylands:wheat_grass_1")
-	local c_wgrass2 = minetest.get_content_id("skylands:wheat_grass_2")
-	local c_wgrass3 = minetest.get_content_id("skylands:wheat_grass_3")
-	local c_wgrass4 = minetest.get_content_id("skylands:wheat_grass_4")
-	local c_wgrass5 = minetest.get_content_id("skylands:wheat_grass_5")
-	local c_danwhi = minetest.get_content_id("flowers:dandelion_white")
-	local c_danyel = minetest.get_content_id("flowers:dandelion_yellow")
-	local c_rose = minetest.get_content_id("flowers:rose")
-	local c_tulip = minetest.get_content_id("flowers:tulip")
-	local c_geranium = minetest.get_content_id("flowers:geranium")
-	local c_viola = minetest.get_content_id("flowers:viola")
-	local c_cactus = minetest.get_content_id("default:cactus")
-	local c_dry_shrub = minetest.get_content_id("default:dry_shrub")
-	local c_golgrass = minetest.get_content_id("skylands:goldengrass")
-	local c_jungrass = minetest.get_content_id("default:junglegrass")
-	local c_air = minetest.get_content_id("air")
-	local c_water = minetest.get_content_id("default:water_source")
-	for j = 1, 7 do
-	for i = -2, 2 do
-	for k = -2, 2 do
-		local vi = area:index(x+i, y+j, z+k)
-		if data[vi] == c_grass1
-		or data[vi] == c_grass2
-		or data[vi] == c_grass3
-		or data[vi] == c_grass4
-		or data[vi] == c_grass5
-		or data[vi] == c_wgrass1
-		or data[vi] == c_wgrass2
-		or data[vi] == c_wgrass3
-		or data[vi] == c_wgrass4
-		or data[vi] == c_wgrass5
-		or data[vi] == c_golgrass
-		or data[vi] == c_jungrass
-		or data[vi] == c_danwhi
-		or data[vi] == c_danyel
-		or data[vi] == c_rose
-		or data[vi] == c_tulip
-		or data[vi] == c_geranium
-		or data[vi] == c_viola
-		or data[vi] == c_cactus
-		or data[vi] == c_dry_shrub then
-			data[vi] = c_air
-		end
-	end
-	end
-	end
-	for j = 1, 7 do
-	for i = -2, 2 do
-	for k = -2, 2 do
-		local vi = area:index(x+i, y-j, z+k)
-		if data[vi] == c_grass1
-		or data[vi] == c_grass2
-		or data[vi] == c_grass3
-		or data[vi] == c_grass4
-		or data[vi] == c_grass5
-		or data[vi] == c_wgrass1
-		or data[vi] == c_wgrass2
-		or data[vi] == c_wgrass3
-		or data[vi] == c_wgrass4
-		or data[vi] == c_wgrass5
-		or data[vi] == c_golgrass
-		or data[vi] == c_jungrass
-		or data[vi] == c_danwhi
-		or data[vi] == c_danyel
-		or data[vi] == c_rose
-		or data[vi] == c_tulip
-		or data[vi] == c_geranium
-		or data[vi] == c_viola
-		or data[vi] == c_cactus
-		or data[vi] == c_dry_shrub then
-			data[vi] = c_air
-		end
-	end
-	end
-	end
-end
+dofile(minetest.get_modpath("skylands").."/abms.lua")
+dofile(minetest.get_modpath("skylands").."/functions.lua")
 
 
---watershed functions
-function skylands_pinetree(x, y, z, area, data)
-	local c_wspitree = minetest.get_content_id("skylands:pinetree")
-	local c_wsneedles = minetest.get_content_id("skylands:needles")
-	local c_snowblock = minetest.get_content_id("default:snowblock")
-	for j = -4, 14 do
-		if j == 3 or j == 6 or j == 9 or j == 12 then
-			for i = -2, 2 do
-			for k = -2, 2 do
-				if math.abs(i) == 2 or math.abs(k) == 2 then
-					if math.random(7) ~= 2 then
-						local vil = area:index(x + i, y + j, z + k)
-						data[vil] = c_wsneedles
-						local vila = area:index(x + i, y + j + 1, z + k)
-						data[vila] = c_snowblock
-					end
-				end
-			end
-			end
-		elseif j == 4 or j == 7 or j == 10 then
-			for i = -1, 1 do
-			for k = -1, 1 do
-				if not (i == 0 and j == 0) then
-					if math.random(11) ~= 2 then
-						local vil = area:index(x + i, y + j, z + k)
-						data[vil] = c_wsneedles
-						local vila = area:index(x + i, y + j + 1, z + k)
-						data[vila] = c_snowblock
-					end
-				end
-			end
-			end
-		elseif j == 13 then
-			for i = -1, 1 do
-			for k = -1, 1 do
-				if not (i == 0 and j == 0) then
-					local vil = area:index(x + i, y + j, z + k)
-					data[vil] = c_wsneedles
-					local vila = area:index(x + i, y + j + 1, z + k)
-					data[vila] = c_wsneedles
-					local vilaa = area:index(x + i, y + j + 2, z + k)
-					data[vilaa] = c_snowblock
-				end
-			end
-			end
-		end
-		local vit = area:index(x, y + j, z)
-		data[vit] = c_wspitree
-	end
-	local vil = area:index(x, y + 15, z)
-	local vila = area:index(x, y + 16, z)
-	local vilaa = area:index(x, y + 17, z)
-	data[vil] = c_wsneedles
-	data[vila] = c_wsneedles
-	data[vilaa] = c_snowblock
-end
 
-function skylands_jungletree(x, y, z, area, data)
-	local c_juntree = minetest.get_content_id("default:jungletree")
-	local c_wsjunleaf = minetest.get_content_id("default:jungleleaves")
-	local c_vine = minetest.get_content_id("skylands:vine")
-	local top = math.random(17,23)
-	local branch = math.floor(top * 0.6)
-	for j = -5, top do
-		if j == top or j == top - 1 or j == branch + 1 or j == branch + 2 then
-			for i = -2, 2 do -- leaves
-			for k = -2, 2 do
-				local vi = area:index(x + i, y + j, z + k)
-				if math.random(5) ~= 2 then
-					data[vi] = c_wsjunleaf
-				end
-			end
-			end
-		elseif j == top - 2 or j == branch then -- branches
-			for i = -1, 1 do
-			for k = -1, 1 do
-				if math.abs(i) + math.abs(k) == 2 then
-					local vi = area:index(x + i, y + j, z + k)
-					data[vi] = c_juntree
-				end
-			end
-			end
-		end
-		if j >= 0 and j <= top - 3 then -- climbable nodes
-			for i = -1, 1 do
-			for k = -1, 1 do
-				if math.abs(i) + math.abs(k) == 1 then
-					local vi = area:index(x + i, y + j, z + k)
-					data[vi] = c_vine
-				end
-			end
-			end
-		end
-		if j <= top - 3 then -- trunk
-			local vi = area:index(x, y + j, z)
-			data[vi] = c_juntree
-		end
-	end
-end
-
-function skylands_acaciatree(x, y, z, area, data)
-	local c_wsactree = minetest.get_content_id("skylands:acaciatree")
-	local c_wsacleaf = minetest.get_content_id("skylands:acacialeaf")
-	for j = -3, 6 do
-		if j == 6 then
-			for i = -4, 4 do
-			for k = -4, 4 do
-				if not (i == 0 or k == 0) then
-					if math.random(7) ~= 2 then
-						local vil = area:index(x + i, y + j, z + k)
-						data[vil] = c_wsacleaf
-					end
-				end
-			end
-			end
-		elseif j == 5 then
-			for i = -2, 2, 4 do
-			for k = -2, 2, 4 do
-				local vit = area:index(x + i, y + j, z + k)
-				data[vit] = c_wsactree
-			end
-			end
-		elseif j == 4 then
-			for i = -1, 1 do
-			for k = -1, 1 do
-				if math.abs(i) + math.abs(k) == 2 then
-					local vit = area:index(x + i, y + j, z + k)
-					data[vit] = c_wsactree
-				end
-			end
-			end
-		else
-			local vit = area:index(x, y + j, z)
-			data[vit] = c_wsactree
-		end
-	end
-end
-
-
---vars for it moreblocks and moreores are installed
+--vars for if mesecons, moreblocks and moreores are installed
 local mblocks = false
 local mores = false
-
+local mcons = false
 
 
 -- On generated function
 
 minetest.register_on_generated(function(minp, maxp, seed)
 	
-	if (minetest.get_modpath("moreblocks")) then
-		--let the generator know it can use moreblocks
-		mblocks = minetest.get_modpath("moreblocks")
-	end
-	if (minetest.get_modpath("moreores")) then
-		mores = minetest.get_modpath("moreores")
-	end
+	mblocks = minetest.get_modpath("moreblocks")
+	mores = minetest.get_modpath("moreores")
+	mcons = minetest.get_modpath("mesecons")
 
 	if minp.x < XMIN or maxp.x > XMAX
 	or minp.y < YMIN or maxp.y > YMAX
@@ -551,6 +196,9 @@ minetest.register_on_generated(function(minp, maxp, seed)
 
 	local c_flistone = minetest.get_content_id("skylands:stone")
 	local c_flidestone = minetest.get_content_id("skylands:desertstone")
+	
+	local c_stocav = minetest.get_content_id("skylands:sky_cavorite")
+	local c_stosil = minetest.get_content_id("skylands:sky_silicon")
 	
 	--watershed nodes for more biomes
 	local c_icydirt = minetest.get_content_id("skylands:icydirt")
@@ -639,7 +287,6 @@ minetest.register_on_generated(function(minp, maxp, seed)
 						end
 						
 						if y > flomid and density < STOTHR and stable[si] >= STABLE then
-							--if nvals_biome[nixz] > 0.15 and nvals_biome[nixz] <= 0.65 then -- fine materials
 							if biome == 7 then
 								data[vi] = c_desand
 								dirt[si] = dirt[si] + 1
@@ -652,7 +299,7 @@ minetest.register_on_generated(function(minp, maxp, seed)
 								dirt[si] = dirt[si] + 1
 							
 							--snow biome
-							elseif biome == 2 then --nvals_biome[nixz] < -0.45 then
+							elseif biome == 2 then
 								if density < DIRTHR then
 									data[vi] = c_snow
 								else
@@ -702,7 +349,7 @@ minetest.register_on_generated(function(minp, maxp, seed)
 								dirt[si] = dirt[si] + 1
 							end
 						else
-							if biome == 7 then--nvals_biome[nixz] > 0.15 and nvals_biome[nixz] <= 0.65 then -- stone
+							if biome == 7 then -- stone
 								data[vi] = c_flidestone
 							elseif nvals_biome[nixz] > 0.65 then
 								if nvals_biome[nixz] > 0.80 then
@@ -714,15 +361,23 @@ minetest.register_on_generated(function(minp, maxp, seed)
 										data[vi] = c_fliobsidian
 									end
 								end
-							elseif biome == 2 then--nvals_biome[nixz] < -0.45 then
+							elseif biome == 2 then
 								if mblocks then
 									data[vi] = c_ironstone
 								else
 									data[vi] = c_flistone
 								end
 							elseif math.random() < ORECHA then
-								local osel = math.random(35)
-								if osel >= 34 then
+								local osel = math.random(40)
+								if osel >= 38 then
+									if mcons then
+										data[vi] = c_stosil
+									else
+										data[vi] = c_stoiron
+									end
+								elseif osel >= 36 then
+									data[vi] = c_stocav
+								elseif osel >= 34 then
 									if mores then
 										if osel == 35 then
 											data[vi] = c_mese
@@ -805,32 +460,27 @@ minetest.register_on_generated(function(minp, maxp, seed)
 						end
 					end
 								
-				
+					if nvals_biome[nixz] <= 0.65 then --not volcano
 					if biome == 7 then --desert
 						if dirt[si] >= 2 and math.random() < CACCHA then
-							skylands_desertplant(data, vi)
-						end
-						dirt[si] = 0
-					elseif nvals_biome[nixz] > 0.65 then --volcano
-						if math.random() < FIRCHA then
-							data[vi] = c_fire
+							skylands:desertplant(data, vi)
 						end
 						dirt[si] = 0
 					elseif biome == 5 then --grassland
 						if dirt[si] >= 2 and math.random() < (APPCHA * 0.5) then
-							skylands_appletree(x, y, z, area, data)
+							skylands:appletree(x, y, z, area, data)
 						elseif math.random() < FLOCHA then
-							skylands_flower(data, vi)
+							skylands:flower(data, vi)
 						elseif math.random() < GRACHA then
-							skylands_grass(data, vi)
+							skylands:grass(data, vi)
 						end
 						dirt[si] = 0
 					elseif biome == 10 then --wheat field
-						skylands_wheat(data, vi)
+						skylands:wheat(data, vi)
 						dirt[si] = 0
 					elseif biome == 6 then --deciduous forest
 						if dirt[si] >= 2 and math.random() < APPCHA then
-							skylands_appletree(x, y, z, area, data)
+							skylands:appletree(x, y, z, area, data)
 						end
 						dirt[si] = 0
 					elseif biome == 4 then -- drylands
@@ -840,28 +490,36 @@ minetest.register_on_generated(function(minp, maxp, seed)
 						dirt[si] = 0
 					elseif biome == 3 then --taiga
 						if dirt[si] >= 2 and math.random() < PINCHA then
-							skylands_pinetree(x, y, z, area, data)
+							skylands:pinetree(x, y, z, area, data)
 						end
 						dirt[si] = 0
 					elseif biome == 2 then --snowy plains
 						if dirt[si] >= 2 and math.random() < SPINCHA then
-							skylands_pinetree(x, y, z, area, data)
+							skylands:pinetree(x, y, z, area, data)
 						end
 						dirt[si] = 0
 					elseif biome == 8 then --savanna
 						if dirt[si] >= 2 and math.random() < ACACHA then
-							skylands_acaciatree(x, y, z, area, data)
+							skylands:acaciatree(x, y, z, area, data)
 						elseif dirt[si] >= 2 and math.random() < GRACHA then
 							data[vi] = c_golgrass
 						end
 						dirt[si] = 0
 					elseif biome == 9 then --rainforest
 						if dirt[si] >= 2 and math.random() < JUNTCHA then
-							skylands_jungletree(x, y, z, area, data)
+							skylands:jungletree(x, y, z, area, data)
 						elseif math.random() < JUNGCHA then
 							data[vi] = c_jungrass
 						end
-						dirt[si] = 0						
+						dirt[si] = 0
+					end	
+					else --volcano
+						--skylands:remtree(x, y, z, area, data)
+						--data[vi] = c_air
+						if math.random() < FIRCHA then
+							data[vi] = c_fire
+						end
+						dirt[si] = 0					
 					end
 				else -- atmosphere
 					stable[si] = 0
@@ -889,10 +547,6 @@ minetest.register_on_generated(function(minp, maxp, seed)
 	local y1 = maxp.y
 	local z1 = maxp.z
 	local sidelen = x1 - x0 -- actually sidelen - 1
-	
-	--local vm, emin, emax = minetest.get_mapgen_object("voxelmanip")
-	--local area = VoxelArea:new{MinEdge=emin, MaxEdge=emax}
-	--local data = vm:get_data()
 	
 	local c_ignore = minetest.get_content_id("ignore")
 	local c_watsour = minetest.get_content_id("default:water_source")
@@ -1012,7 +666,7 @@ minetest.register_on_generated(function(minp, maxp, seed)
 								local vin = area:index(x, yasurf, z + 1)
 								local vis = area:index(x, yasurf, z - 1)
 								if data[vie] == c_tree then
-									highlandpools_remtree(x + 1, yasurf, z, area, data)
+									skylands:remtree(x + 1, yasurf, z, area, data)
 									if fluidtype == "water" then
 										data[vie] = c_watsour
 									elseif fluidtype == "lava" then
@@ -1024,7 +678,7 @@ minetest.register_on_generated(function(minp, maxp, seed)
 								or data[vie] == c_apple
 								or data[vie] == c_fire
 								or data[vie] == c_leaves then
-									highlandpools_remplant(x + 1, yasurf, z, area, data)
+									skylands:remplant(x + 1, yasurf, z, area, data)
 									if fluidtype == "water" then
 										data[vie] = c_watsour
 									elseif fluidtype == "lava" then
@@ -1034,7 +688,7 @@ minetest.register_on_generated(function(minp, maxp, seed)
 									end
 								end
 								if data[viw] == c_tree then
-									highlandpools_remtree(x - 1, yasurf, z, area, data)
+									skylands:remtree(x - 1, yasurf, z, area, data)
 									if fluidtype == "water" then
 										data[viw] = c_watsour
 									elseif fluidtype == "lava" then
@@ -1046,7 +700,7 @@ minetest.register_on_generated(function(minp, maxp, seed)
 								or data[viw] == c_apple
 								or data[viw] == c_fire
 								or data[viw] == c_leaves then
-									highlandpools_remplant(x + 1, yasurf, z, area, data)
+									skylands:remplant(x + 1, yasurf, z, area, data)
 									if fluidtype == "water" then
 										data[viw] = c_watsour
 									elseif fluidtype == "lava" then
@@ -1056,7 +710,7 @@ minetest.register_on_generated(function(minp, maxp, seed)
 									end
 								end
 								if data[vin] == c_tree then
-									highlandpools_remtree(x, yasurf, z + 1, area, data)
+									skylands:remtree(x, yasurf, z + 1, area, data)
 									if fluidtype == "water" then
 										data[vin] = c_watsour
 									elseif fluidtype == "lava" then
@@ -1068,7 +722,7 @@ minetest.register_on_generated(function(minp, maxp, seed)
 								or data[vin] == c_apple
 								or data[vin] == c_fire
 								or data[vin] == c_leaves then
-									highlandpools_remplant(x + 1, yasurf, z, area, data)
+									skylands:remplant(x + 1, yasurf, z, area, data)
 									if fluidtype == "water" then
 										data[vin] = c_watsour
 									elseif fluidtype == "lava" then
@@ -1078,7 +732,7 @@ minetest.register_on_generated(function(minp, maxp, seed)
 									end
 								end
 								if data[vis] == c_tree then
-									highlandpools_remtree(x, yasurf, z - 1, area, data)
+									skylands:remtree(x, yasurf, z - 1, area, data)
 									if fluidtype == "water" then
 										data[vis] = c_watsour
 									elseif fluidtype == "lava" then
@@ -1090,7 +744,7 @@ minetest.register_on_generated(function(minp, maxp, seed)
 								or data[vis] == c_apple
 								or data[vis] == c_fire
 								or data[vis] == c_leaves then
-									highlandpools_remplant(x + 1, yasurf, z, area, data)
+									skylands:remplant(x + 1, yasurf, z, area, data)
 									if fluidtype == "water" then
 										data[vis] = c_watsour
 									elseif fluidtype == "lava" then
@@ -1145,7 +799,7 @@ minetest.register_on_generated(function(minp, maxp, seed)
 								data[viu] = c_fliobsidian
 								break
 							else
-								highlandpools_remplant(x + 1, yasurf, z, area, data)
+								skylands:remplant(x + 1, yasurf, z, area, data)
 								break
 							end
 						end
@@ -1164,73 +818,3 @@ minetest.register_on_generated(function(minp, maxp, seed)
 	local chugent = math.ceil((os.clock() - t1) * 1000)
 	print ("[skylands] "..chugent.." ms")
 end)
-
---generate ore clusters
-minetest.register_abm({
-	nodenames = {"group:skyores"},
-	--neighbors = {"group:stone"},
-	interval = 1.0,
-	chance = 1,
-	action = function(pos, node, active_object_count, active_object_count_wider)
-		--variable to store name of node to place
-		local orename = ""
-		--variable to determine how large of a cluster to create
-		local orerad = 1
-		--determine above variables
-		if node.name == "skylands:stone_with_coal" then
-			orename = "default:stone_with_coal"
-			orerad = 2
-		end
-		if node.name == "skylands:stone_with_iron" then
-			orename = "default:stone_with_iron"
-			orerad = 1
-		end
-		if node.name == "skylands:stone_with_gold" then
-			orename = "default:stone_with_gold"
-			orerad = 1
-		end
-		if node.name == "skylands:stone_with_mese" then
-			orename = "default:stone_with_mese"
-			orerad = 1
-		end
-		if node.name == "skylands:stone_with_diamond" then
-			orename = "default:stone_with_diamond"
-			orerad = 1
-		end
-		if node.name == "skylands:stone_with_copper" then
-			orename = "default:stone_with_copper"
-			orerad = 1
-		end
-		if node.name == "skylands:mineral_tin" then
-			orename = "moreores:mineral_tin"
-			orerad = 1
-		end
-		if node.name == "skylands:mineral_silver" then
-			orename = "moreores:mineral_silver"
-			orerad = 1
-		end
-		if node.name == "skylands:mineral_mithril" then
-			orename = "moreores:mineral_mithril"
-			orerad = 1
-		end
-		--in a cube of length orerad*2
-		for x = -orerad, orerad do
-		for y = -orerad, orerad do
-		for z = -orerad, orerad do
-			--store new position
-			local np = {x=x+pos.x,y=y+pos.y,z=z+pos.z}
-			--on random chance, spread.
-			if math.random(6) == 1 then --needs balancing
-				--only affect stone nodes
-				targ = minetest.get_node(np)
-				if targ.name == "skylands:stone" then
-					minetest.set_node(np, {name=orename})
-				end
-			end
-		end
-		end 
-		end
-		--ensure this node dies so as to stop the abm
-		minetest.set_node(pos, {name=orename})
-	end,
-})

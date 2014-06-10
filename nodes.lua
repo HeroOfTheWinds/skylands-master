@@ -169,6 +169,40 @@ minetest.register_node("skylands:mineral_mithril", {
 	drop = "moreores:mithril_lump"
 })
 
+--Skylands-specific ores
+
+--Silicon
+
+minetest.register_node("skylands:sky_silicon", {
+	description = "Silicon ore",
+	tiles = {"default_stone.png^skylands_mineral_silicon.png"},
+	groups = {cracky = 3, stone = 1, skyores=1},
+	drop = "mesecons_materials:silicon",
+})
+
+minetest.register_node("skylands:mineral_silicon", {
+	description = "Silicon ore",
+	tiles = {"default_stone.png^skylands_mineral_silicon.png"},
+	groups = {cracky = 3, stone = 1},
+	drop = "mesecons_materials:silicon",
+})
+
+--Cavorite
+
+minetest.register_node("skylands:sky_cavorite", {
+	description = "Cavorite ore",
+	tiles = {"default_stone.png^skylands_mineral_cavorite.png"},
+	groups = {cracky = 3, stone = 1, skyores=1},
+	drop = "skylands:cavorite",
+})
+
+minetest.register_node("skylands:mineral_cavorite", {
+	description = "Cavorite ore",
+	tiles = {"default_stone.png^skylands_mineral_cavorite.png"},
+	groups = {cracky = 3, stone = 1},
+	drop = "skylands:cavorite",
+})
+
 --WaterShed rip-offs
 
 minetest.register_node("skylands:acacialeaf", {
@@ -290,7 +324,12 @@ minetest.register_node("skylands:pinewood", {
 	sounds = default.node_sound_wood_defaults(),
 })
 
+-- Craftitem
 
+minetest.register_craftitem("skylands:cavorite", {
+	description = "Cavorite",
+	inventory_image = "skylands_cavorite.png",
+})
 
 -- Crafting
 
