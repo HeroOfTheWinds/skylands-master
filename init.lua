@@ -26,7 +26,7 @@ local DIRTHR = 0.04 -- Dirt density threshold
 local STOTHR = 0.08 -- Stone density threshold
 local STABLE = 2 -- Minimum number of stacked stone nodes in column for dirt / sand on top
 
-local APPCHA = 0.02 -- Appletree chance
+local APPCHA = 0.035 -- Appletree chance
 local PINCHA = 0.015 -- Pine tree chance
 local SPINCHA = 0.01 -- Pine tree chance for snow plains
 local ACACHA = 0.01 -- Acacia tree chance
