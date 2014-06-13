@@ -1,4 +1,4 @@
--- skylands 2.0 by HeroOfTheWinds, based on floatindev 0.2.0 by paramat
+-- skylands 3.1 by HeroOfTheWinds, based on floatindev 0.2.0 by paramat
 -- For latest stable Minetest and back to 0.4.8
 -- Depends default, fire, moreblocks?, moreores?, mesecons?
 -- License: code WTFPL
@@ -14,12 +14,12 @@ local ZMAX = 33000
 
 local FLOW = 256 --for pools
 
-local CHUINT = 1 -- Chunk interval for floatland layers
+local CHUINT = 4 -- Chunk interval for floatland layers
 local WAVAMP = 24 --16 -- Structure wave amplitude
-local HISCAL = 32 --24 -- Upper structure vertical scale
-local LOSCAL = 24 --24 -- Lower structure vertical scale
-local HIEXP = 0.5 -- Upper structure density gradient exponent
-local LOEXP = 0.5 -- Lower structure density gradient exponent
+local HISCAL = 128 --24 -- Upper structure vertical scale
+local LOSCAL = 128 --24 -- Lower structure vertical scale
+local HIEXP = 0.33 -- Upper structure density gradient exponent
+local LOEXP = 0.33 -- Lower structure density gradient exponent
 local CLUSAV = -0.4 -- Large scale variation average
 local CLUSAM = 0.5 -- Large scale variation amplitude
 local DIRTHR = 0.04 -- Dirt density threshold
@@ -44,7 +44,7 @@ local ORECHA = 1 / (6 * 6 * 6)
 local np_float = {
 	offset = 0,
 	scale = 1,
-	spread = {x=256, y=256, z=256},
+	spread = {x=384, y=256, z=384},
 	seed = 277777979,
 	octaves = 6,
 	persist = 0.67--6
@@ -147,10 +147,8 @@ minetest.register_on_generated(function(minp, maxp, seed)
 		return
 	end
 	local chulay = math.floor((minp.y + 32) / 80) -- chunk layer number, 0 = surface chunk
-	if math.fmod(chulay, CHUINT) ~= 0 then -- if chulay / CHUINT has a remainder
-		return
-	end
-
+   	local tercen = (math.floor(chulay / CHUINT) * CHUINT + CHUINT / 2) * 80 - 32 -- terrain centre of this layer
+	
 	local t1 = os.clock()
 	local x1 = maxp.x
 	local y1 = maxp.y
@@ -205,7 +203,7 @@ minetest.register_on_generated(function(minp, maxp, seed)
 	local c_drygrass = minetest.get_content_id("skylands:drygrass")
 	local c_permafrost = minetest.get_content_id("skylands:permafrost")
 	
-	local sidelen = x1 - x0 + 1
+	local sidelen = (x1 - x0 + 1)
 	local chulens = {x=sidelen, y=sidelen, z=sidelen}
 	local minposxyz = {x=x0, y=y0, z=z0}
 	local minposxz = {x=x0, y=z0}
@@ -242,7 +240,7 @@ minetest.register_on_generated(function(minp, maxp, seed)
 			local vi = area:index(x0, y, z)
 			for x = x0, x1 do -- for each node do
 				local si = x - x0 + 1
-				local flomid = chumid + nvals_wave[nixz] * WAVAMP
+				local flomid = tercen + nvals_wave[nixz] * WAVAMP -- y of floatland middle
 				local grad
 				if y > flomid then
 					grad = ((y - flomid) / HISCAL) ^ HIEXP
