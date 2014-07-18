@@ -1,5 +1,7 @@
 -- Nodes
 
+-- REDEFINITIONS --
+
 minetest.register_node("skylands:stone", {
 	description = "FLI Stone",
 	tiles = {"default_stone.png"},
@@ -26,6 +28,26 @@ minetest.register_node("skylands:obsidian", {
 	groups = {cracky=1,level=2},
 	drop = "default:obsidian",
 })
+
+--moreblocks nodes - iron_stone redefined so that cavegen doesn't destroy
+minetest.register_node("skylands:coal_stone", {
+	description = "FLI Coal Stone",
+	tiles = {"moreblocks_coal_stone.png"},
+	--is_ground_content = false,
+	groups = {cracky=3},
+	drop = "moreblocks:coal_stone",
+})
+
+minetest.register_node("skylands:iron_stone", {
+	description = "FLI Iron Stone",
+	tiles = {"moreblocks_iron_stone.png"},
+	is_ground_content = false,
+	groups = {cracky=3},
+	drop = "moreblocks:iron_stone",
+})
+
+-- UNIQUE NODES --
+
 --NEW! Cinder for volcanic biomes
 minetest.register_node("skylands:cinder", {
 	description = "Cinder",
@@ -52,22 +74,128 @@ minetest.register_craft({
 		{"skylands:cinder", "skylands:cinder"}
 	}
 })
---moreblocks nodes - iron_stone redefined so that cavegen doesn't destroy
-minetest.register_node("skylands:coal_stone", {
-	description = "FLI Coal Stone",
-	tiles = {"moreblocks_coal_stone.png"},
-	--is_ground_content = false,
-	groups = {cracky=3},
-	drop = "moreblocks:coal_stone",
+
+--gold heaven grass for heaven biome... rich soil
+minetest.register_node("skylands:heaven_grass", {
+	description = "Dirt with Heaven Grass",
+	tiles = {"skylands_heavengrass.png", "default_dirt.png", "default_dirt.png^skylands_heavengrass_side.png"},
+	is_ground_content = true,
+	groups = {crumbly=3,soil=1},
+	drop = 'skylands:rich_dirt',
+	sounds = default.node_sound_dirt_defaults({
+		footstep = {name="default_grass_footstep", gain=0.25},
+	}),
 })
 
-minetest.register_node("skylands:iron_stone", {
-	description = "FLI Iron Stone",
-	tiles = {"moreblocks_iron_stone.png"},
+minetest.register_node("skylands:rich_dirt", {
+	description = "Rich Dirt",
+	tiles = {"skylands_rich_dirt.png"},
+	is_ground_content = true,
+	groups = {crumbly=3,soil=1},
+	sounds = default.node_sound_dirt_defaults(),
+})
+
+--golden leaves for heaven trees
+minetest.register_node("skylands:golden_leaves", {
+	description = "Golden Leaves",
+	drawtype = "allfaces_optional",
+	waving = 1,
+	visual_scale = 1.3,
+	tiles = {"skylands_goldleaves.png"},
+	paramtype = "light",
+	is_ground_content = false,
+	groups = {snappy=3, leafdecay=3, flammable=2, leaves=1},
+	sounds = default.node_sound_leaves_defaults(),
+})
+
+--golden apples
+minetest.register_node("skylands:golden_apple", {
+	description = "Golden Apple",
+	drawtype = "plantlike",
+	visual_scale = 1.0,
+	tiles = {"skylands_golden_apple.png"},
+	inventory_image = "skylands_golden_apple.png",
+	paramtype = "light",
+	sunlight_propagates = true,
+	walkable = false,
+	is_ground_content = true,
+	selection_box = {
+		type = "fixed",
+		fixed = {-0.2, -0.5, -0.2, 0.2, 0, 0.2}
+	},
+	groups = {fleshy=3,dig_immediate=3,flammable=2,leafdecay=3,leafdecay_drop=1},
+	on_use = minetest.item_eat(4),
+	sounds = default.node_sound_leaves_defaults(),
+	after_place_node = function(pos, placer, itemstack)
+		if placer:is_player() then
+			minetest.set_node(pos, {name="skylands:golden_apple", param2=1})
+		end
+	end,
+})
+
+--white stone for Heaven biome
+minetest.register_node("skylands:white_stone", {
+	description = "White Stone",
+	tiles = {"skylands_white_stone.png"},
 	is_ground_content = false,
 	groups = {cracky=3},
-	drop = "moreblocks:iron_stone",
+	drop = "skylands:white_cobble",
 })
+
+minetest.register_node("skylands:white_cobble", {
+	description = "White Cobblestone",
+	tiles = {"skylands_white_cobble.png"},
+	is_ground_content = false,
+	groups = {cracky=3},
+})
+
+minetest.register_node("skylands:white_stone_brick", {
+	description = "White Stone Brick",
+	tiles = {"skylands_white_stone_brick.png"},
+	groups = {cracky=2},
+	sounds = default.node_sound_stone_defaults(),
+})
+--Craft to create white stone brick from 4 white stone blocks
+minetest.register_craft({
+	output = "skylands:white_stone_brick",
+	recipe = {
+		{"skylands:white_stone", "skylands:white_stone"},
+		{"skylands:white_stone", "skylands:white_stone"}
+	}
+})
+--smelt some white stone from white cobble
+minetest.register_craft({
+	type = "cooking",
+	output = "skylands:white_stone",
+	recipe ="skylands:white_cobble"
+})
+
+--quartz blocks for heaven biome
+minetest.register_node("skylands:quartz", {
+	description = "Quartz",
+	tiles = {"skylands_quartz.png"},
+	groups = {cracky=2},
+	sounds = default.node_sound_stone_defaults(),
+})
+
+--quartz pillars for heaven biome
+minetest.register_node("skylands:quartz_pillar", {
+	description = "Quartz Pillar",
+	tiles = {"skylands_quartz.png", "skylands_quartz.png", "skylands_quartz_pillar.png"},
+	groups = {cracky=2},
+	sounds = default.node_sound_stone_defaults(),
+})
+
+--recipe for quartz pillars
+minetest.register_craft({
+	output = "skylands:quartz_pillar 3",
+	recipe = {
+		{"skylands:quartz"},
+		{"skylands:quartz"},
+		{"skylands:quartz"}
+	}
+})
+
 --define special flame so that it does not expire
 minetest.register_node("skylands:constant_flame", {
 	description = "Fire",
@@ -92,6 +220,8 @@ minetest.register_node("skylands:constant_flame", {
 		fire.on_flame_remove_at(pos)
 	end,
 })
+
+-- ORES --
 
 --Define the ores so that they propagate with the abm
 minetest.register_node("skylands:stone_with_coal", {

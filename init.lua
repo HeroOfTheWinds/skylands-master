@@ -1,4 +1,4 @@
--- skylands 3.1 by HeroOfTheWinds, based on floatindev 0.2.0 by paramat
+-- skylands 4.0 by HeroOfTheWinds, based on floatindev 0.2.0 by paramat
 -- For latest stable Minetest and back to 0.4.8
 -- Depends default, fire, moreblocks?, moreores?, mesecons?
 -- License: code WTFPL
@@ -12,8 +12,6 @@ local XMAX = 33000
 local ZMIN = -33000
 local ZMAX = 33000
 
-local FLOW = 256 --for pools
-
 local CHUINT = 4 -- Chunk interval for floatland layers
 local WAVAMP = 24 --16 -- Structure wave amplitude
 local HISCAL = 128 --24 -- Upper structure vertical scale
@@ -23,6 +21,7 @@ local LOEXP = 0.33 -- Lower structure density gradient exponent
 local CLUSAV = -0.4 -- Large scale variation average
 local CLUSAM = 0.5 -- Large scale variation amplitude
 local DIRTHR = 0.04 -- Dirt density threshold
+local SANTHR = 0.05 -- Sandstone density threshold
 local STOTHR = 0.08 -- Stone density threshold
 local STABLE = 2 -- Minimum number of stacked stone nodes in column for dirt / sand on top
 
@@ -38,6 +37,9 @@ local JUNGCHA = 0.2 -- Junglegrass chance
 local FIRCHA = 0.03 -- Fire chance
 local LAKCHA = 0.002
 local ORECHA = 1 / (6 * 6 * 6)
+
+local HEAVEN = 10000 --altitude at which "heaven" islands begin appearing
+local HEAVINT = 800 --interval between "heaven" layers; also determines layer width
 
 -- 3D noise for floatlands
 
@@ -124,6 +126,7 @@ dofile(minetest.get_modpath("skylands").."/nodes.lua")
 dofile(minetest.get_modpath("skylands").."/wheat.lua")
 dofile(minetest.get_modpath("skylands").."/abms.lua")
 dofile(minetest.get_modpath("skylands").."/functions.lua")
+dofile(minetest.get_modpath("skylands").."/pools.lua")
 
 
 
@@ -176,6 +179,8 @@ minetest.register_on_generated(function(minp, maxp, seed)
 	local c_dryshrub = minetest.get_content_id("default:dry_shrub")
 	local c_dirt = minetest.get_content_id("default:dirt")
 	local c_desand = minetest.get_content_id("default:desert_sand")
+	local c_sand = minetest.get_content_id("default:sand")
+	local c_stosand = minetest.get_content_id("default:sandstone")
 	--Newly added
 	local c_snow = minetest.get_content_id("default:dirt_with_snow")
 	local c_fliobsidian = minetest.get_content_id("skylands:obsidian")
@@ -203,6 +208,11 @@ minetest.register_on_generated(function(minp, maxp, seed)
 	local c_drygrass = minetest.get_content_id("skylands:drygrass")
 	local c_permafrost = minetest.get_content_id("skylands:permafrost")
 	
+	--Heaven biome nodes
+	local c_stowhite = minetest.get_content_id("skylands:white_stone")
+	local c_richdirt = minetest.get_content_id("skylands:rich_dirt")
+	local c_hvngrass = minetest.get_content_id("skylands:heaven_grass")
+	
 	local sidelen = (x1 - x0 + 1)
 	local chulens = {x=sidelen, y=sidelen, z=sidelen}
 	local minposxyz = {x=x0, y=y0, z=z0}
@@ -217,6 +227,9 @@ minetest.register_on_generated(function(minp, maxp, seed)
 	
 	local nvals_temp = minetest.get_perlin_map(np_temp, chulens):get3dMap_flat(minposxyz)
 	local nvals_humid = minetest.get_perlin_map(np_humid, chulens):get3dMap_flat(minposxyz)
+	
+	local lakepoints = {}  --table to store points to scan for lake generation
+	local li = 1 --index for lakepoints
 	
 	local nixyz = 1
 	local nixz = 1
@@ -264,7 +277,11 @@ minetest.register_on_generated(function(minp, maxp, seed)
 							end
 						elseif n_temp > 0.35 then
 							if n_humid < -0.35 then
-								biome = 7 -- desert
+								if n_humid < -0.50 then
+									biome = 7 -- desert
+								else
+									biome = 11 --sand(stone) borderland
+								end
 							elseif n_humid > 0.35 then
 								biome = 9 -- rainforest
 							else
@@ -284,9 +301,21 @@ minetest.register_on_generated(function(minp, maxp, seed)
 							end
 						end
 						
+						--NOT FULLY IMPLEMENTED, UNCOMMENT ONLY IF YOU WANT A SHODDY PREVIEW!
+						--if y >= HEAVEN and y < HEAVEN + HEAVINT then
+							--biome = 12 --heaven
+						--end
+						
 						if y > flomid and density < STOTHR and stable[si] >= STABLE then
 							if biome == 7 then
 								data[vi] = c_desand
+								dirt[si] = dirt[si] + 1
+							elseif biome == 11 then --sand border
+								if density < SANTHR then
+									data[vi] = c_sand --make sand
+								else
+									data[vi] = c_stosand --or sandstone
+								end
 								dirt[si] = dirt[si] + 1
 							elseif biome == 4 or biome == 8 then --dry grassland or savanna
 								if density < DIRTHR then
@@ -338,6 +367,13 @@ minetest.register_on_generated(function(minp, maxp, seed)
 									end
 								end
 								dirt[si] = dirt[si] + 1
+							elseif biome == 12 then
+								if density < DIRTHR then
+									data[vi] = c_hvngrass
+								else
+									data[vi] = c_richdirt
+								end
+								dirt[si] = dirt[si] + 1
 							else
 								if density < DIRTHR then
 									data[vi] = c_grass
@@ -359,6 +395,8 @@ minetest.register_on_generated(function(minp, maxp, seed)
 										data[vi] = c_fliobsidian
 									end
 								end
+							elseif biome == 12 then
+								data[vi] = c_stowhite
 							elseif biome == 2 then
 								if mblocks then
 									data[vi] = c_ironstone
@@ -438,7 +476,11 @@ minetest.register_on_generated(function(minp, maxp, seed)
 						end
 					elseif n_temp > 0.35 then
 						if n_humid < -0.35 then
-							biome = 7 -- desert
+							if n_humid < -0.50 then
+									biome = 7 -- desert
+								else
+									biome = 11 --sand(stone) borderland
+								end
 						elseif n_humid > 0.35 then
 							biome = 9 -- rainforest
 						else
@@ -457,16 +499,31 @@ minetest.register_on_generated(function(minp, maxp, seed)
 							biome = 5 -- grassland
 						end
 					end
-								
+					--NOT FULLY IMPLEMENTED, UNCOMMENT ONLY IF YOU WANT A SHODDY PREVIEW!
+					--if y >= HEAVEN and y < HEAVEN + HEAVINT then
+						--biome = 12 --heaven
+					--end
+					
 					if nvals_biome[nixz] <= 0.65 then --not volcano
-					if biome == 7 then --desert
+					if biome == 7 or biome == 11 then --desert
 						if dirt[si] >= 2 and math.random() < CACCHA then
 							skylands:desertplant(data, vi)
 						end
 						dirt[si] = 0
 					elseif biome == 5 then --grassland
+						lakepoints[li] = {x=x,y=y,z=z}
+						li = li + 1
 						if dirt[si] >= 2 and math.random() < (APPCHA * 0.5) then
 							skylands:appletree(x, y, z, area, data)
+						elseif math.random() < FLOCHA then
+							skylands:flower(data, vi)
+						elseif math.random() < GRACHA then
+							skylands:grass(data, vi)
+						end
+						dirt[si] = 0
+					elseif biome == 12 then --heaven
+						if dirt[si] >= 2 and math.random() < (APPCHA * 0.7) then
+							skylands:goldentree(x, y, z, area, data)
 						elseif math.random() < FLOCHA then
 							skylands:flower(data, vi)
 						elseif math.random() < GRACHA then
@@ -477,6 +534,8 @@ minetest.register_on_generated(function(minp, maxp, seed)
 						skylands:wheat(data, vi)
 						dirt[si] = 0
 					elseif biome == 6 then --deciduous forest
+						lakepoints[li] = {x=x,y=y,z=z}
+						li = li + 1
 						if dirt[si] >= 2 and math.random() < APPCHA then
 							skylands:appletree(x, y, z, area, data)
 						end
@@ -492,6 +551,8 @@ minetest.register_on_generated(function(minp, maxp, seed)
 						end
 						dirt[si] = 0
 					elseif biome == 2 then --snowy plains
+						lakepoints[li] = {x=x,y=y,z=z}
+						li = li + 1
 						if dirt[si] >= 2 and math.random() < SPINCHA then
 							skylands:pinetree(x, y, z, area, data)
 						end
@@ -504,6 +565,8 @@ minetest.register_on_generated(function(minp, maxp, seed)
 						end
 						dirt[si] = 0
 					elseif biome == 9 then --rainforest
+						lakepoints[li] = {x=x,y=y,z=z}
+						li = li + 1
 						if dirt[si] >= 2 and math.random() < JUNTCHA then
 							skylands:jungletree(x, y, z, area, data)
 						elseif math.random() < JUNGCHA then
@@ -514,6 +577,8 @@ minetest.register_on_generated(function(minp, maxp, seed)
 					else --volcano
 						--skylands:remtree(x, y, z, area, data)
 						--data[vi] = c_air
+						lakepoints[li] = {x=x,y=y,z=z}
+						li = li + 1
 						if math.random() < FIRCHA then
 							data[vi] = c_fire
 						end
@@ -531,283 +596,7 @@ minetest.register_on_generated(function(minp, maxp, seed)
 		nixz = nixz + 80
 	end
 	
-	--pools code
-	local y0 = minp.y
-	if y0 < YMIN or y0 > YMAX then
-		return
-	end
-	
-	local t1 = os.clock()
-	local x0 = minp.x
-	local z0 = minp.z
-	print ("[highlandpools] chunk ("..x0.." "..y0.." "..z0..")")
-	local x1 = maxp.x
-	local y1 = maxp.y
-	local z1 = maxp.z
-	local sidelen = x1 - x0 -- actually sidelen - 1
-	
-	local c_ignore = minetest.get_content_id("ignore")
-	local c_watsour = minetest.get_content_id("default:water_source")
-	local c_lavasour = minetest.get_content_id("default:lava_source")
-	local c_ice = minetest.get_content_id("default:ice")
-	local c_tree = minetest.get_content_id("default:tree")
-	local c_apple = minetest.get_content_id("default:apple")
-	local c_leaves = minetest.get_content_id("default:leaves")
-	
-	for xcen = x0 + 8, x1 - 7, 8 do
-	for zcen = z0 + 8, z1 - 7, 8 do
-		local yasurf = false -- y of above surface node
-		local fluidtype = "water" --type of fluid to fill in
-		for y = y1, 2, -1 do
-			local vi = area:index(xcen, y, zcen)
-			local c_node = data[vi]
-			if y == y1 and c_node ~= c_air then -- if top node solid
-				break
-			elseif c_node == c_watsour then
-				break
-			elseif c_node == c_grass then
-				yasurf = y + 1
-				fluidtype = "water"
-				break
-			elseif c_node == c_snow then
-				yasurf = y + 1
-				fluidtype = "ice"
-				break
-			elseif c_node == c_cinder then
-				yasurf = y + 1
-				fluidtype = "lava"
-				break
-			elseif c_node == c_gravel then
-				yasurf = y + 1
-				fluidtype = "lava"
-				break
-			elseif c_node == c_obsidian then
-				yasurf = y + 1
-				fluidtype = "lava"
-				break
-			end
-		end
-		if yasurf then
-			local abort = false
-			for ser = 1, 80 do
-				local vi = area:index(xcen + ser, yasurf, zcen)
-				local c_node = data[vi]
-				if xcen + ser == x1 then
-					abort = true
-				elseif c_node ~= c_air
-				and c_node ~= c_tree
-				and c_node ~= c_leaves
-				and c_node ~= c_apple then
-					break
-				end
-			end
-			for ser = 1, 80 do
-				local vi = area:index(xcen - ser, yasurf, zcen)
-				local c_node = data[vi]
-				if xcen - ser == x0 then
-					abort = true
-				elseif c_node ~= c_air
-				and c_node ~= c_tree
-				and c_node ~= c_leaves
-				and c_node ~= c_apple then
-					break
-				end
-			end
-			for ser = 1, 80 do
-				local vi = area:index(xcen, yasurf, zcen + ser)
-				local c_node = data[vi]
-				if zcen + ser == z1 then
-					abort = true
-				elseif c_node ~= c_air
-				and c_node ~= c_tree
-				and c_node ~= c_leaves
-				and c_node ~= c_apple then
-					break
-				end
-			end
-			for ser = 1, 80 do
-				local vi = area:index(xcen, yasurf, zcen - ser)
-				local c_node = data[vi]
-				if zcen - ser == z0 then
-					abort = true
-				elseif c_node ~= c_air
-				and c_node ~= c_tree
-				and c_node ~= c_leaves
-				and c_node ~= c_apple then
-					break
-				end
-			end
-			if abort then
-				break
-			end
-			
-			local vi = area:index(xcen, yasurf, zcen)
-			if fluidtype == "water" then
-				data[vi] = c_watsour
-			elseif fluidtype == "lava" then
-				data[vi] = c_lavasour
-			elseif fluidtype == "ice" then
-				data[vi] = c_ice
-			end
-			local flab = false -- flow abort
-			for flow = 1, FLOW do
-				for z = z0, z1 do
-					for x = x0, x1 do
-						local vif = area:index(x, yasurf, z)
-						if data[vif] == c_watsour or data[vif] == c_lavasour or data[vif] == c_ice then
-							if x == x0 or x == x1 or z == z0 or z == z1 then
-								flab = true -- if water at chunk edge abort flow
-								break
-							else -- flow water
-								local vie = area:index(x + 1, yasurf, z)
-								local viw = area:index(x - 1, yasurf, z)
-								local vin = area:index(x, yasurf, z + 1)
-								local vis = area:index(x, yasurf, z - 1)
-								if data[vie] == c_tree then
-									skylands:remtree(x + 1, yasurf, z, area, data)
-									if fluidtype == "water" then
-										data[vie] = c_watsour
-									elseif fluidtype == "lava" then
-										data[vie] = c_lavasour
-									elseif fluidtype == "ice" then
-										data[vie] = c_ice
-									end
-								elseif data[vie] == c_air
-								or data[vie] == c_apple
-								or data[vie] == c_fire
-								or data[vie] == c_leaves then
-									skylands:remplant(x + 1, yasurf, z, area, data)
-									if fluidtype == "water" then
-										data[vie] = c_watsour
-									elseif fluidtype == "lava" then
-										data[vie] = c_lavasour
-									elseif fluidtype == "ice" then
-										data[vie] = c_ice
-									end
-								end
-								if data[viw] == c_tree then
-									skylands:remtree(x - 1, yasurf, z, area, data)
-									if fluidtype == "water" then
-										data[viw] = c_watsour
-									elseif fluidtype == "lava" then
-										data[viw] = c_lavasour
-									elseif fluidtype == "ice" then
-										data[viw] = c_ice
-									end
-								elseif data[viw] == c_air
-								or data[viw] == c_apple
-								or data[viw] == c_fire
-								or data[viw] == c_leaves then
-									skylands:remplant(x + 1, yasurf, z, area, data)
-									if fluidtype == "water" then
-										data[viw] = c_watsour
-									elseif fluidtype == "lava" then
-										data[viw] = c_lavasour
-									elseif fluidtype == "ice" then
-										data[viw] = c_ice
-									end
-								end
-								if data[vin] == c_tree then
-									skylands:remtree(x, yasurf, z + 1, area, data)
-									if fluidtype == "water" then
-										data[vin] = c_watsour
-									elseif fluidtype == "lava" then
-										data[vin] = c_lavasour
-									elseif fluidtype == "ice" then
-										data[vin] = c_ice
-									end
-								elseif data[vin] == c_air
-								or data[vin] == c_apple
-								or data[vin] == c_fire
-								or data[vin] == c_leaves then
-									skylands:remplant(x + 1, yasurf, z, area, data)
-									if fluidtype == "water" then
-										data[vin] = c_watsour
-									elseif fluidtype == "lava" then
-										data[vin] = c_lavasour
-									elseif fluidtype == "ice" then
-										data[vin] = c_ice
-									end
-								end
-								if data[vis] == c_tree then
-									skylands:remtree(x, yasurf, z - 1, area, data)
-									if fluidtype == "water" then
-										data[vis] = c_watsour
-									elseif fluidtype == "lava" then
-										data[vis] = c_lavasour
-									elseif fluidtype == "ice" then
-										data[vis] = c_ice
-									end
-								elseif data[vis] == c_air
-								or data[vis] == c_apple
-								or data[vis] == c_fire
-								or data[vis] == c_leaves then
-									skylands:remplant(x + 1, yasurf, z, area, data)
-									if fluidtype == "water" then
-										data[vis] = c_watsour
-									elseif fluidtype == "lava" then
-										data[vis] = c_lavasour
-									elseif fluidtype == "ice" then
-										data[vis] = c_ice
-									end
-								end
-							end
-						end
-					end
-					if flab then
-						break
-					end
-				end
-				if flab then
-					break
-				end
-			end
-			if flab then -- erase water from this y level
-				for z = z0, z1 do
-				for x = x0, x1 do
-					local vi = area:index(x, yasurf, z)
-					if data[vi] == c_watsour then
-						data[vi] = c_air
-					end
-					if data[vi] == c_lavasour then
-						data[vi] = c_air
-					end
-					if data[vi] == c_ice then
-						data[vi] = c_air
-					end
-				end
-				end
-			else -- flow downwards add dirt
-				for z = z0, z1 do
-				for x = x0, x1 do
-					local vi = area:index(x, yasurf, z)
-					if data[vi] == c_watsour or data[vif] == c_lavasour then
-						for y = yasurf - 1, y0, -1 do
-							local viu = area:index(x, y, z)
-							if data[viu] == c_air then
-								if fluidtype == "water" or fluidtype == "ice" then
-									data[viu] = c_watsour
-								elseif fluidtype == "lava" then
-									data[viu] = c_lavasour
-								end
-							elseif data[viu] == c_grass or data[viu] == c_snow then
-								data[viu] = c_dirt
-								break
-							elseif data[viu] == c_cinder or data[viu] == c_gravel then
-								data[viu] = c_fliobsidian
-								break
-							else
-								skylands:remplant(x + 1, yasurf, z, area, data)
-								break
-							end
-						end
-					end
-				end
-				end
-			end
-		end
-	end
-	end
+	skylands:gen_pool(lakepoints, area, data, x0, z0, x1, z1)
 	
 	vm:set_data(data)
 	vm:set_lighting({day=0, night=0})

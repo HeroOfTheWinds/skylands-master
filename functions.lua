@@ -25,6 +25,29 @@ function skylands:appletree(x, y, z, area, data)
 	end
 end
 
+function skylands:goldentree(x, y, z, area, data)
+
+	local c_tree = minetest.get_content_id("default:tree")
+	local c_gapple = minetest.get_content_id("skylands:golden_apple")
+	local c_gleaves = minetest.get_content_id("skylands:golden_leaves")
+	for j = -2, 4 do
+		if j >= 1 then
+			for i = -2, 2 do
+			for k = -2, 2 do
+				local vi = area:index(x + i, y + j + 1, z + k)
+				if math.random(48) == 2 then
+					data[vi] = c_gapple
+				elseif math.random(3) ~= 2 then
+					data[vi] = c_gleaves
+				end
+			end
+			end
+		end
+		local vi = area:index(x, y + j, z)
+		data[vi] = c_tree
+	end
+end
+
 function skylands:grass(data, vi)
 	local c_grass1 = minetest.get_content_id("default:grass_1")
 	local c_grass2 = minetest.get_content_id("default:grass_2")
