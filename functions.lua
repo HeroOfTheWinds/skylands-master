@@ -130,6 +130,8 @@ function skylands:remtree(x, y, z, area, data)
 	local c_jtree = minetest.get_content_id("default:jungletree")
 	local c_jleaves = minetest.get_content_id("default:jungleleaves")
 	local c_vine = minetest.get_content_id("skylands:vine")
+	local c_gapple = minetest.get_content_id("skylands:golden_apple")
+	local c_gleaves = minetest.get_content_id("skylands:golden_leaves")
 	local c_air = minetest.get_content_id("air")
 	for j = 1, 23 do
 	for i = -2, 2 do
@@ -140,7 +142,9 @@ function skylands:remtree(x, y, z, area, data)
 		or data[vi] == c_leaves
 		or data[vi] == c_jtree
 		or data[vi] == c_vine
-		or data[vi] == c_jleaves then
+		or data[vi] == c_jleaves
+		or data[vi] == c_gapple
+		or data[vi] == c_gleaves then
 			data[vi] = c_air
 		end
 	end
@@ -155,7 +159,9 @@ function skylands:remtree(x, y, z, area, data)
 		or data[vi] == c_leaves
 		or data[vi] == c_jtree
 		or data[vi] == c_vine
-		or data[vi] == c_jleaves then
+		or data[vi] == c_jleaves
+		or data[vi] == c_gapple
+		or data[vi] == c_gleaves then
 			data[vi] = c_air
 		end
 	end

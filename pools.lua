@@ -7,16 +7,21 @@ function skylands:gen_pool(lakepoints, area, data, x0, z0, x1, z1)
 	local c_ignore = minetest.get_content_id("ignore")
 	local c_watsour = minetest.get_content_id("default:water_source")
 	local c_lavasour = minetest.get_content_id("default:lava_source")
+	local c_spring = minetest.get_content_id("skylands:spring")
 	local c_ice = minetest.get_content_id("default:ice")
 	local c_grass = minetest.get_content_id("default:dirt_with_grass")
 	local c_tree = minetest.get_content_id("default:tree")
 	local c_apple = minetest.get_content_id("default:apple")
 	local c_leaves = minetest.get_content_id("default:leaves")
+	local c_gapple = minetest.get_content_id("skylands:golden_apple")
+	local c_gleaves = minetest.get_content_id("skylands:golden_leaves")
 	local c_dirt = minetest.get_content_id("default:dirt")
 	local c_snow = minetest.get_content_id("default:dirt_with_snow")
 	local c_cinder = minetest.get_content_id("skylands:cinder")
 	local c_gravel = minetest.get_content_id("default:gravel")
 	local c_obsidian = minetest.get_content_id("skylands:obsidian")
+	local c_hvngrass = minetest.get_content_id("skylands:heaven_grass")
+	local c_rich = minetest.get_content_id("skylands:rich_dirt")
 	
 	local sidelen = x1 - x0 -- actually sidelen - 1
 
@@ -53,6 +58,9 @@ function skylands:gen_pool(lakepoints, area, data, x0, z0, x1, z1)
 			elseif c_node == c_obsidian then
 				ftype = "lava"
 				surf = true
+			elseif c_node == c_hvngrass then
+				ftype = "spring"
+				surf = true
 			end
 		--end
 		if surf then
@@ -68,7 +76,9 @@ function skylands:gen_pool(lakepoints, area, data, x0, z0, x1, z1)
 				elseif c_node ~= c_air
 				and c_node ~= c_tree
 				and c_node ~= c_leaves
-				and c_node ~= c_apple then
+				and c_node ~= c_apple
+				and c_node ~= c_gapple
+				and c_node ~= c_gleaves then
 					--print("found x+ edge")
 					break
 				end
@@ -83,7 +93,9 @@ function skylands:gen_pool(lakepoints, area, data, x0, z0, x1, z1)
 				elseif c_node ~= c_air
 				and c_node ~= c_tree
 				and c_node ~= c_leaves
-				and c_node ~= c_apple then
+				and c_node ~= c_apple
+				and c_node ~= c_gapple
+				and c_node ~= c_gleaves then
 					--print("found x-")
 					break
 				end
@@ -98,7 +110,9 @@ function skylands:gen_pool(lakepoints, area, data, x0, z0, x1, z1)
 				elseif c_node ~= c_air
 				and c_node ~= c_tree
 				and c_node ~= c_leaves
-				and c_node ~= c_apple then
+				and c_node ~= c_apple
+				and c_node ~= c_gapple
+				and c_node ~= c_gleaves then
 					--print("y+ found")
 					break
 				end
@@ -113,7 +127,9 @@ function skylands:gen_pool(lakepoints, area, data, x0, z0, x1, z1)
 				elseif c_node ~= c_air
 				and c_node ~= c_tree
 				and c_node ~= c_leaves
-				and c_node ~= c_apple then
+				and c_node ~= c_apple
+				and c_node ~= c_gapple
+				and c_node ~= c_gleaves then
 					--print("y- found")
 					break
 				end
@@ -130,9 +146,12 @@ function skylands:gen_pool(lakepoints, area, data, x0, z0, x1, z1)
 			if ftype == "lava" then
 				c_fluid = c_lavasour
 				c_under = c_lavasour
-			elseif c_fluid == "ice" then
+			elseif ftype == "ice" then
 				c_fluid = c_ice
 				c_under = c_watsour
+			elseif ftype == "spring" then
+				c_fluid = c_spring
+				c_under = c_spring
 			end
 			
 			local vi = area:index(xcen, yasurf, zcen)
@@ -157,7 +176,9 @@ function skylands:gen_pool(lakepoints, area, data, x0, z0, x1, z1)
 									data[vie] = c_fluid
 								elseif data[vie] == c_air
 								or data[vie] == c_apple
-								or data[vie] == c_leaves then
+								or data[vie] == c_leaves
+								or data[vie] == c_gapple
+								or data[vie] == c_gleaves then
 									data[vie] = c_fluid
 								end
 								if data[viw] == c_tree then
@@ -165,7 +186,9 @@ function skylands:gen_pool(lakepoints, area, data, x0, z0, x1, z1)
 									data[viw] = c_fluid
 								elseif data[viw] == c_air
 								or data[viw] == c_apple
-								or data[viw] == c_leaves then
+								or data[viw] == c_leaves
+								or data[vie] == c_gapple
+								or data[vie] == c_gleaves then
 									data[viw] = c_fluid
 								end
 								if data[vin] == c_tree then
@@ -173,7 +196,9 @@ function skylands:gen_pool(lakepoints, area, data, x0, z0, x1, z1)
 									data[vin] = c_fluid
 								elseif data[vin] == c_air
 								or data[vin] == c_apple
-								or data[vin] == c_leaves then
+								or data[vin] == c_leaves
+								or data[vie] == c_gapple
+								or data[vie] == c_gleaves then
 									data[vin] = c_fluid
 								end
 								if data[vis] == c_tree then
@@ -181,7 +206,9 @@ function skylands:gen_pool(lakepoints, area, data, x0, z0, x1, z1)
 									data[vis] = c_fluid
 								elseif data[vis] == c_air
 								or data[vis] == c_apple
-								or data[vis] == c_leaves then
+								or data[vis] == c_leaves
+								or data[vie] == c_gapple
+								or data[vie] == c_gleaves then
 									data[vis] = c_fluid
 								end
 							end
@@ -222,6 +249,8 @@ function skylands:gen_pool(lakepoints, area, data, x0, z0, x1, z1)
 							elseif data[viu] == c_grass then
 								data[viu] = c_dirt
 								break
+							elseif data[viu] == c_hvngrass then
+								data[viu] = c_rich
 							else
 								break
 							end

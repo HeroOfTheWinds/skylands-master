@@ -1,6 +1,6 @@
 -- skylands 4.0 by HeroOfTheWinds, based on floatindev 0.2.0 by paramat
 -- For latest stable Minetest and back to 0.4.8
--- Depends default, fire, moreblocks?, moreores?, mesecons?
+-- Depends default, fire, stairs, moreblocks?, moreores?, mesecons?
 -- License: code WTFPL
 
 -- Parameters
@@ -37,8 +37,10 @@ local JUNGCHA = 0.2 -- Junglegrass chance
 local FIRCHA = 0.03 -- Fire chance
 local LAKCHA = 0.002
 local ORECHA = 1 / (6 * 6 * 6)
+local PILCHA = 0.002
+local PARCHA = 0.0001
 
-local HEAVEN = 10000 --altitude at which "heaven" islands begin appearing
+local HEAVEN = 8000 --altitude at which "heaven" islands begin appearing
 local HEAVINT = 800 --interval between "heaven" layers; also determines layer width
 
 -- 3D noise for floatlands
@@ -123,6 +125,7 @@ local np_humid = {
 skylands = {}
 
 dofile(minetest.get_modpath("skylands").."/nodes.lua")
+dofile(minetest.get_modpath("skylands").."/stairs.lua")
 dofile(minetest.get_modpath("skylands").."/wheat.lua")
 dofile(minetest.get_modpath("skylands").."/abms.lua")
 dofile(minetest.get_modpath("skylands").."/functions.lua")
@@ -149,8 +152,6 @@ minetest.register_on_generated(function(minp, maxp, seed)
 	or minp.z < ZMIN or maxp.z > ZMAX then
 		return
 	end
-	local chulay = math.floor((minp.y + 32) / 80) -- chunk layer number, 0 = surface chunk
-   	local tercen = (math.floor(chulay / CHUINT) * CHUINT + CHUINT / 2) * 80 - 32 -- terrain centre of this layer
 	
 	local t1 = os.clock()
 	local x1 = maxp.x
@@ -159,6 +160,11 @@ minetest.register_on_generated(function(minp, maxp, seed)
 	local x0 = minp.x
 	local y0 = minp.y
 	local z0 = minp.z
+	
+	local sidelen = (x1 - x0 + 1)
+	local chulay = math.floor((minp.y + 32) / sidelen) -- chunk layer number, 0 = surface chunk
+   	local tercen = (math.floor(chulay / CHUINT) * CHUINT + CHUINT / 2) * sidelen - 32 -- terrain centre of this layer
+	
 	
 	print ("[skylands] chunk minp ("..x0.." "..y0.." "..z0..")")
 	
@@ -212,8 +218,10 @@ minetest.register_on_generated(function(minp, maxp, seed)
 	local c_stowhite = minetest.get_content_id("skylands:white_stone")
 	local c_richdirt = minetest.get_content_id("skylands:rich_dirt")
 	local c_hvngrass = minetest.get_content_id("skylands:heaven_grass")
+	local c_pillar = minetest.get_content_id("skylands:s_pillar")
+	local c_parthenon = minetest.get_content_id("skylands:s_parthenon")
 	
-	local sidelen = (x1 - x0 + 1)
+	
 	local chulens = {x=sidelen, y=sidelen, z=sidelen}
 	local minposxyz = {x=x0, y=y0, z=z0}
 	local minposxz = {x=x0, y=z0}
@@ -302,9 +310,12 @@ minetest.register_on_generated(function(minp, maxp, seed)
 						end
 						
 						--NOT FULLY IMPLEMENTED, UNCOMMENT ONLY IF YOU WANT A SHODDY PREVIEW!
-						--if y >= HEAVEN and y < HEAVEN + HEAVINT then
-							--biome = 12 --heaven
-						--end
+						if y >= HEAVEN then
+							--print((math.floor((y-HEAVEN)/1000) * 1000 / HEAVINT))
+							if math.fmod((math.floor((y-HEAVEN)/1000) * 1000 / HEAVINT), 2) == 0 then  --can you math?
+								biome = 12 --heaven
+							end
+						end
 						
 						if y > flomid and density < STOTHR and stable[si] >= STABLE then
 							if biome == 7 then
@@ -500,9 +511,11 @@ minetest.register_on_generated(function(minp, maxp, seed)
 						end
 					end
 					--NOT FULLY IMPLEMENTED, UNCOMMENT ONLY IF YOU WANT A SHODDY PREVIEW!
-					--if y >= HEAVEN and y < HEAVEN + HEAVINT then
-						--biome = 12 --heaven
-					--end
+					if y >= HEAVEN then
+						if math.fmod((math.floor((y-HEAVEN)/1000) * 1000 / HEAVINT), 2) == 0 then  --can you math?
+							biome = 12 --heaven
+						end
+					end
 					
 					if nvals_biome[nixz] <= 0.65 then --not volcano
 					if biome == 7 or biome == 11 then --desert
@@ -522,12 +535,19 @@ minetest.register_on_generated(function(minp, maxp, seed)
 						end
 						dirt[si] = 0
 					elseif biome == 12 then --heaven
+						ppos = {x=x,y=y,z=z}
+						lakepoints[li] = {x=x,y=y,z=z}
+						li = li + 1
 						if dirt[si] >= 2 and math.random() < (APPCHA * 0.7) then
 							skylands:goldentree(x, y, z, area, data)
 						elseif math.random() < FLOCHA then
 							skylands:flower(data, vi)
 						elseif math.random() < GRACHA then
 							skylands:grass(data, vi)
+						elseif math.random() < PILCHA then
+							data[vi] = c_pillar
+						elseif math.random() < PARCHA then
+							data[vi] = c_parthenon
 						end
 						dirt[si] = 0
 					elseif biome == 10 then --wheat field
@@ -591,9 +611,9 @@ minetest.register_on_generated(function(minp, maxp, seed)
 				nixz = nixz + 1
 				vi = vi + 1
 			end
-			nixz = nixz - 80
+			nixz = nixz - sidelen
 		end
-		nixz = nixz + 80
+		nixz = nixz + sidelen
 	end
 	
 	skylands:gen_pool(lakepoints, area, data, x0, z0, x1, z1)

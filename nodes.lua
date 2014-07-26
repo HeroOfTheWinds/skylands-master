@@ -78,7 +78,7 @@ minetest.register_craft({
 --gold heaven grass for heaven biome... rich soil
 minetest.register_node("skylands:heaven_grass", {
 	description = "Dirt with Heaven Grass",
-	tiles = {"skylands_heavengrass.png", "default_dirt.png", "default_dirt.png^skylands_heavengrass_side.png"},
+	tiles = {"skylands_heavengrass2.png", "skylands_rich_dirt.png", "skylands_rich_dirt.png^skylands_heavengrass_side2.png"},
 	is_ground_content = true,
 	groups = {crumbly=3,soil=1},
 	drop = 'skylands:rich_dirt',
@@ -475,5 +475,86 @@ minetest.register_craft({
 	recipe = {
 		{"skylands:pinetree"},
 	}
+})
+
+--hacky schematic placers
+
+minetest.register_node("skylands:s_pillar", {
+	description = "A Hack like you should know what this does...",
+	tiles = "skylands_quartz_pillar.png",
+	groups = {crumbly=3, schema=1},
+})
+
+minetest.register_node("skylands:s_parthenon", {
+	description = "A Hack like you should know what this does...",
+	tiles = "skylands_quartz.png",
+	groups = {crumbly=3, schema=1},
+})
+
+--spring water
+
+minetest.register_node("skylands:spring_flowing", {
+	description = "Flowing Spring of Healing",
+	inventory_image = minetest.inventorycube("skylands_spring.png"),
+	drawtype = "flowingliquid",
+	tiles = {"skylands_spring.png"},
+	special_tiles = {
+		{
+			image="skylands_spring_flowing_animated.png",
+			backface_culling=false,
+			animation={type="vertical_frames", aspect_w=16, aspect_h=16, length=0.8}
+		},
+		{
+			image="skylands_spring_flowing_animated.png",
+			backface_culling=true,
+			animation={type="vertical_frames", aspect_w=16, aspect_h=16, length=0.8}
+		},
+	},
+	alpha = 160,
+	paramtype = "light",
+	paramtype2 = "flowingliquid",
+	walkable = false,
+	pointable = false,
+	diggable = false,
+	buildable_to = true,
+	drop = "",
+	drowning = 1,
+	liquidtype = "flowing",
+	liquid_alternative_flowing = "skylands:spring_flowing",
+	liquid_alternative_source = "skylands:spring",
+	liquid_viscosity = 1,
+	post_effect_color = {a=64, r=100, g=100, b=0},
+	groups = {water=3, liquid=3, puts_out_fire=1, not_in_creative_inventory=1, freezes=1, melt_around=1},
+})
+
+minetest.register_node("skylands:spring", {
+	description = "Spring of Healing",
+	inventory_image = minetest.inventorycube("skylands_spring.png"),
+	drawtype = "liquid",
+	tiles = {
+		{name="skylands_spring_animated.png", animation={type="vertical_frames", aspect_w=16, aspect_h=16, length=2.0}}
+	},
+	special_tiles = {
+		-- New-style water source material (mostly unused)
+		{
+			name="skylands_spring_animated.png",
+			animation={type="vertical_frames", aspect_w=16, aspect_h=16, length=2.0},
+			backface_culling = false,
+		}
+	},
+	alpha = 160,
+	paramtype = "light",
+	walkable = false,
+	pointable = false,
+	diggable = false,
+	buildable_to = true,
+	drop = "",
+	drowning = 1,
+	liquidtype = "source",
+	liquid_alternative_flowing = "skylands:spring_flowing",
+	liquid_alternative_source = "skylands:spring",
+	liquid_viscosity = 1,
+	post_effect_color = {a=64, r=100, g=100, b=0},
+	groups = {water=3, liquid=3, puts_out_fire=1, freezes=1},
 })
 

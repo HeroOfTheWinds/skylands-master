@@ -86,3 +86,111 @@ minetest.register_abm({
 		minetest.remove_node(pos)
 	end,
 })
+
+--grab schematics
+local parthenon = minetest.get_modpath("skylands").."/schems/parthenon.mts"
+local pillar = minetest.get_modpath("skylands").."/schems/pillar.mts"
+
+--place pillars in heaven
+minetest.register_abm({
+	nodenames = {"skylands:s_pillar"},
+	interval = 1.0,
+	chance = 1,
+	action = function(pos, node, active_object_count, active_object_count_wider)
+		minetest.place_schematic(pos, pillar, 0, {}, true)
+	end,
+})
+
+--place parthenons in heaven
+minetest.register_abm({
+	nodenames = {"skylands:s_parthenon"},
+	interval = 1.0,
+	chance = 1,
+	action = function(pos, node, active_object_count, active_object_count_wider)
+		npos = {x=pos.x,y=pos.y-7,z=pos.z}
+		minetest.place_schematic(npos, parthenon, "random", {}, true)
+	end,
+})
+
+--healing effect of springs
+minetest.register_abm({
+	nodenames = {"skylands:spring", "skylands:spring_flowing"},
+	interval = 10.0,
+	chance = 1,
+	action = function(pos, node, active_object_count, active_object_count_wider)
+		local all_objects = minetest.get_objects_inside_radius(pos, 1)
+		local _,obj
+		for _,obj in ipairs(all_objects) do
+			if obj:is_player() then
+				if obj:get_hp() < 20 then
+					obj:set_hp(obj:get_hp() + 4)
+				end
+			end
+		end
+	end,
+})
+
+--heaven grass to and from rich_dirt
+minetest.register_abm({
+	nodenames = {"skylands:rich_dirt"},
+	interval = 2,
+	chance = 200,
+	action = function(pos, node)
+		local above = {x=pos.x, y=pos.y+1, z=pos.z}
+		local name = minetest.get_node(above).name
+		local nodedef = minetest.registered_nodes[name]
+		if nodedef and (nodedef.sunlight_propagates or nodedef.paramtype == "light")
+				and nodedef.liquidtype == "none"
+				and (minetest.get_node_light(above) or 0) >= 13 then
+			minetest.set_node(pos, {name = "skylands:heaven_grass"})
+		end
+	end
+})
+
+minetest.register_abm({
+	nodenames = {"skylands:heaven_grass"},
+	interval = 2,
+	chance = 20,
+	action = function(pos, node)
+		local above = {x=pos.x, y=pos.y+1, z=pos.z}
+		local name = minetest.get_node(above).name
+		local nodedef = minetest.registered_nodes[name]
+		if name ~= "ignore" and nodedef
+				and not ((nodedef.sunlight_propagates or nodedef.paramtype == "light")
+				and nodedef.liquidtype == "none") then
+			minetest.set_node(pos, {name = "skylands:rich_dirt"})
+		end
+	end
+})
+
+minetest.register_abm({
+	nodenames = {"skylands:drygrass"},
+	interval = 2,
+	chance = 20,
+	action = function(pos, node)
+		local above = {x=pos.x, y=pos.y+1, z=pos.z}
+		local name = minetest.get_node(above).name
+		local nodedef = minetest.registered_nodes[name]
+		if name ~= "ignore" and nodedef
+				and not ((nodedef.sunlight_propagates or nodedef.paramtype == "light")
+				and nodedef.liquidtype == "none") then
+			minetest.set_node(pos, {name = "default:dirt"})
+		end
+	end
+})
+
+minetest.register_abm({
+	nodenames = {"skylands:icydirt"},
+	interval = 2,
+	chance = 20,
+	action = function(pos, node)
+		local above = {x=pos.x, y=pos.y+1, z=pos.z}
+		local name = minetest.get_node(above).name
+		local nodedef = minetest.registered_nodes[name]
+		if name ~= "ignore" and nodedef
+				and not ((nodedef.sunlight_propagates or nodedef.paramtype == "light")
+				and nodedef.liquidtype == "none") then
+			minetest.set_node(pos, {name = "default:dirt"})
+		end
+	end
+})
