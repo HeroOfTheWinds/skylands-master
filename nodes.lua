@@ -1,5 +1,7 @@
 -- Nodes
 
+local OLDSTYLE = false --variable to toggle color of heavengrass
+
 -- REDEFINITIONS --
 
 minetest.register_node("skylands:stone", {
@@ -75,17 +77,31 @@ minetest.register_craft({
 	}
 })
 
---gold heaven grass for heaven biome... rich soil
-minetest.register_node("skylands:heaven_grass", {
-	description = "Dirt with Heaven Grass",
-	tiles = {"skylands_heavengrass2.png", "skylands_rich_dirt.png", "skylands_rich_dirt.png^skylands_heavengrass_side2.png"},
-	is_ground_content = true,
-	groups = {crumbly=3,soil=1},
-	drop = 'skylands:rich_dirt',
-	sounds = default.node_sound_dirt_defaults({
-		footstep = {name="default_grass_footstep", gain=0.25},
-	}),
-})
+if OLDSTYLE == true then
+	--gold heaven grass for heaven biome... rich soil
+	minetest.register_node("skylands:heaven_grass", {
+		description = "Dirt with Heaven Grass",
+		tiles = {"skylands_heavengrass.png", "default_dirt.png", "default_dirt.png^skylands_heavengrass_side.png"},
+		is_ground_content = true,
+		groups = {crumbly=3,soil=1},
+		drop = 'skylands:rich_dirt',
+		sounds = default.node_sound_dirt_defaults({
+			footstep = {name="default_grass_footstep", gain=0.25},
+		}),
+	})
+else
+	--gold heaven grass for heaven biome... rich soil
+	minetest.register_node("skylands:heaven_grass", {
+		description = "Dirt with Heaven Grass",
+		tiles = {"skylands_heavengrass2.png", "skylands_rich_dirt.png", "skylands_rich_dirt.png^skylands_heavengrass_side2.png"},
+		is_ground_content = true,
+		groups = {crumbly=3,soil=1},
+		drop = 'skylands:rich_dirt',
+		sounds = default.node_sound_dirt_defaults({
+			footstep = {name="default_grass_footstep", gain=0.25},
+		}),
+	})
+end
 
 minetest.register_node("skylands:rich_dirt", {
 	description = "Rich Dirt",
@@ -105,6 +121,21 @@ minetest.register_node("skylands:golden_leaves", {
 	paramtype = "light",
 	is_ground_content = false,
 	groups = {snappy=3, leafdecay=3, flammable=2, leaves=1},
+	drop = {
+		max_items = 1,
+		items = {
+			{
+				-- player will get sapling with 1/20 chance
+				items = {'skylands:golden_sapling'},
+				rarity = 20,
+			},
+			{
+				-- player will get leaves only if he get no saplings,
+				-- this is because max_items is 1
+				items = {'skylands:golden_leaves'},
+			}
+		}
+	},
 	sounds = default.node_sound_leaves_defaults(),
 })
 
@@ -343,6 +374,21 @@ minetest.register_node("skylands:acacialeaf", {
 	paramtype = "light",
 	is_ground_content = false,
 	groups = {snappy=3, flammable=2, leaves=1},
+	drop = {
+		max_items = 1,
+		items = {
+			{
+				-- player will get sapling with 1/20 chance
+				items = {'skylands:acacia_sapling'},
+				rarity = 20,
+			},
+			{
+				-- player will get leaves only if he get no saplings,
+				-- this is because max_items is 1
+				items = {'skylands:acacialeaf'},
+			}
+		}
+	},
 	sounds = default.node_sound_leaves_defaults(),
 })
 
@@ -364,6 +410,21 @@ minetest.register_node("skylands:needles", {
 	paramtype = "light",
 	is_ground_content = false,
 	groups = {snappy=3},
+	drop = {
+		max_items = 1,
+		items = {
+			{
+				-- player will get sapling with 1/20 chance
+				items = {'skylands:pine_sapling'},
+				rarity = 20,
+			},
+			{
+				-- player will get leaves only if he get no saplings,
+				-- this is because max_items is 1
+				items = {'skylands:needles'},
+			}
+		}
+	},
 	sounds = default.node_sound_leaves_defaults(),
 })
 
@@ -558,3 +619,58 @@ minetest.register_node("skylands:spring", {
 	groups = {water=3, liquid=3, puts_out_fire=1, freezes=1},
 })
 
+--SAPLINGS--
+
+minetest.register_node("skylands:pine_sapling", {
+	description = "Pine Sapling",
+	drawtype = "plantlike",
+	visual_scale = 1.0,
+	tiles = {"skylands_pine_sapling.png"},
+	inventory_image = "skylands_pine_sapling.png",
+	wield_image = "skylands_pine_sapling.png",
+	paramtype = "light",
+	walkable = false,
+	is_ground_content = true,
+	selection_box = {
+		type = "fixed",
+		fixed = {-0.3, -0.5, -0.3, 0.3, 0.35, 0.3}
+	},
+	groups = {snappy=2,dig_immediate=3,flammable=2,attached_node=1},
+	sounds = default.node_sound_leaves_defaults(),
+})
+
+minetest.register_node("skylands:acacia_sapling", {
+	description = "Acacia Sapling",
+	drawtype = "plantlike",
+	visual_scale = 1.0,
+	tiles = {"skylands_acacia_sapling.png"},
+	inventory_image = "skylands_acacia_sapling.png",
+	wield_image = "skylands_acacia_sapling.png",
+	paramtype = "light",
+	walkable = false,
+	is_ground_content = true,
+	selection_box = {
+		type = "fixed",
+		fixed = {-0.3, -0.5, -0.3, 0.3, 0.35, 0.3}
+	},
+	groups = {snappy=2,dig_immediate=3,flammable=2,attached_node=1},
+	sounds = default.node_sound_leaves_defaults(),
+})
+
+minetest.register_node("skylands:golden_sapling", {
+	description = "Golden Tree Sapling",
+	drawtype = "plantlike",
+	visual_scale = 1.0,
+	tiles = {"skylands_golden_sapling.png"},
+	inventory_image = "skylands_golden_sapling.png",
+	wield_image = "skylands_golden_sapling.png",
+	paramtype = "light",
+	walkable = false,
+	is_ground_content = true,
+	selection_box = {
+		type = "fixed",
+		fixed = {-0.3, -0.5, -0.3, 0.3, 0.35, 0.3}
+	},
+	groups = {snappy=2,dig_immediate=3,flammable=2,attached_node=1},
+	sounds = default.node_sound_leaves_defaults(),
+})

@@ -194,3 +194,74 @@ minetest.register_abm({
 		end
 	end
 })
+
+--SAPLING GROWTH--
+
+-- Pine sapling
+
+minetest.register_abm({
+	nodenames = {"skylands:pine_sapling"},
+	interval = 59,
+	chance = 3,
+	action = function(pos, node)
+		local x = pos.x
+		local y = pos.y
+		local z = pos.z
+		local vm = minetest.get_voxel_manip()
+		local pos1 = {x=x-2, y=y-4, z=z-2}
+		local pos2 = {x=x+2, y=y+17, z=z+2}
+		local emin, emax = vm:read_from_map(pos1, pos2)
+		local area = VoxelArea:new({MinEdge=emin, MaxEdge=emax})
+		local data = vm:get_data()
+		skylands:pinetree(x, y, z, area, data)
+		vm:set_data(data)
+		vm:write_to_map()
+		vm:update_map()
+	end,
+})
+
+-- Acacia sapling
+
+minetest.register_abm({
+	nodenames = {"skylands:acacia_sapling"},
+	interval = 61,
+	chance = 3,
+	action = function(pos, node)
+		local x = pos.x
+		local y = pos.y
+		local z = pos.z
+		local vm = minetest.get_voxel_manip()
+		local pos1 = {x=x-4, y=y-3, z=z-4}
+		local pos2 = {x=x+4, y=y+6, z=z+4}
+		local emin, emax = vm:read_from_map(pos1, pos2)
+		local area = VoxelArea:new({MinEdge=emin, MaxEdge=emax})
+		local data = vm:get_data()
+		skylands:acaciatree(x, y, z, area, data)
+		vm:set_data(data)
+		vm:write_to_map()
+		vm:update_map()
+	end,
+})
+
+-- Golden Tree sapling
+
+minetest.register_abm({
+	nodenames = {"skylands:golden_sapling"},
+	interval = 61,
+	chance = 3,
+	action = function(pos, node)
+		local x = pos.x
+		local y = pos.y
+		local z = pos.z
+		local vm = minetest.get_voxel_manip()
+		local pos1 = {x=x-4, y=y-3, z=z-4}
+		local pos2 = {x=x+4, y=y+6, z=z+4}
+		local emin, emax = vm:read_from_map(pos1, pos2)
+		local area = VoxelArea:new({MinEdge=emin, MaxEdge=emax})
+		local data = vm:get_data()
+		skylands:goldentree(x, y, z, area, data)
+		vm:set_data(data)
+		vm:write_to_map()
+		vm:update_map()
+	end,
+})
