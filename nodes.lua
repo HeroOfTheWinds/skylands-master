@@ -542,13 +542,13 @@ minetest.register_craft({
 
 minetest.register_node("skylands:s_pillar", {
 	description = "A Hack like you should know what this does...",
-	tiles = "skylands_quartz_pillar.png",
+	tiles = {"skylands_quartz_pillar.png"},
 	groups = {crumbly=3, schema=1},
 })
 
 minetest.register_node("skylands:s_parthenon", {
 	description = "A Hack like you should know what this does...",
-	tiles = "skylands_quartz.png",
+	tiles = {"skylands_quartz.png"},
 	groups = {crumbly=3, schema=1},
 })
 
