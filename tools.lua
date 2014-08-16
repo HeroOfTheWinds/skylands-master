@@ -546,3 +546,25 @@ minetest.register_craft({
 		{"skylands:cavorite_handle"},
 	}
 })
+
+--check to add wear to crafts when previous tool was worn
+minetest.register_on_craft(function(itemstack, player, old_craft_grid, craft_inv)
+	if string.find(itemstack:get_name(), "cavorite") then --either cavorite_handle or a cavorite tool
+		local wear = 0 --store wear
+		local old_tool = false --store old tool used
+		--loop through old crafting grid to find old tool
+		for i = 1, 9 do
+			slot = old_craft_grid[i]
+			if string.find(slot:get_name(), "default") then
+				old_tool = slot --this is the tool, since it's name contains "default"
+			end
+		end
+		if old_tool:get_wear() == 0 then --tool has no wear, so give one with no wear
+			return
+		else
+			--tool has wear, so apply it to the new one.
+			wear = old_tool:get_wear()
+			return {name=itemstack:get_name(), count=1, wear=wear, metadata=""}
+		end
+	end
+end)
