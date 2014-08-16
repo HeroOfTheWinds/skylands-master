@@ -46,6 +46,18 @@ minetest.register_abm({
 			orename = "moreores:mineral_mithril"
 			orerad = 1
 		end
+		if node.name == "skylands:mineral_uranium" then
+			orename = "technic:mineral_uranium"
+			orerad = 1
+		end
+		if node.name == "skylands:mineral_chromium" then
+			orename = "technic:mineral_chromium"
+			orerad = 1
+		end
+		if node.name == "skylands:mineral_zinc" then
+			orename = "technic:mineral_zinc"
+			orerad = 1
+		end
 		if node.name == "skylands:sky_silicon" then
 			orename = "skylands:mineral_silicon"
 			orerad = 1

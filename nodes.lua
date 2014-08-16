@@ -330,6 +330,34 @@ minetest.register_node("skylands:mineral_mithril", {
 	drop = "moreores:mithril_lump"
 })
 
+--technic ores
+minetest.register_node( "skylands:mineral_uranium", {
+	description = "Uranium Ore",
+	tiles = { "default_stone.png^technic_mineral_uranium.png" },
+	is_ground_content = true,
+	groups = {cracky=3, radioactive=1, skyores=1},
+	sounds = default.node_sound_stone_defaults(),
+	drop = 'craft "technic:uranium" 1',
+}) 
+
+minetest.register_node( "skylands:mineral_chromium", {
+	description = "Chromium Ore",
+	tiles = { "default_stone.png^technic_mineral_chromium.png" },
+	is_ground_content = true,
+	groups = {cracky=3, skyores=1},
+	sounds = default.node_sound_stone_defaults(),
+	drop = 'craft "technic:chromium_lump" 1',
+}) 
+
+minetest.register_node( "skylands:mineral_zinc", {
+	description = "Zinc Ore",
+	tile_images = { "default_stone.png^technic_mineral_zinc.png" },
+	is_ground_content = true,
+	groups = {cracky=3, skyores=1},
+	sounds = default.node_sound_stone_defaults(),
+	drop = 'craft "technic:zinc_lump" 1',
+})
+
 --Skylands-specific ores
 
 --Silicon
