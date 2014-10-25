@@ -1,5 +1,16 @@
 -- Nodes
 
+--vars for if mesecons, moreblocks, technic and moreores are installed
+local mblocks = false
+local mores = false
+local mcons = false
+local tech = false
+
+mblocks = minetest.get_modpath("moreblocks")
+mores = minetest.get_modpath("moreores")
+mcons = minetest.get_modpath("mesecons")
+tech = minetest.get_modpath("technic")
+
 local OLDSTYLE = false --variable to toggle color of heavengrass
 
 -- REDEFINITIONS --
@@ -32,21 +43,23 @@ minetest.register_node("skylands:obsidian", {
 })
 
 --moreblocks nodes - iron_stone redefined so that cavegen doesn't destroy
-minetest.register_node("skylands:coal_stone", {
-	description = "FLI Coal Stone",
-	tiles = {"moreblocks_coal_stone.png"},
-	--is_ground_content = false,
-	groups = {cracky=3},
-	drop = "moreblocks:coal_stone",
-})
+if (mblocks) then
+	minetest.register_node("skylands:coal_stone", {
+		description = "FLI Coal Stone",
+		tiles = {"moreblocks_coal_stone.png"},
+		--is_ground_content = false,
+		groups = {cracky=3},
+		drop = "moreblocks:coal_stone",
+	})
 
-minetest.register_node("skylands:iron_stone", {
-	description = "FLI Iron Stone",
-	tiles = {"moreblocks_iron_stone.png"},
-	is_ground_content = false,
-	groups = {cracky=3},
-	drop = "moreblocks:iron_stone",
-})
+	minetest.register_node("skylands:iron_stone", {
+		description = "FLI Iron Stone",
+		tiles = {"moreblocks_iron_stone.png"},
+		is_ground_content = false,
+		groups = {cracky=3},
+		drop = "moreblocks:iron_stone",
+	})
+end
 
 -- UNIQUE NODES --
 
@@ -308,73 +321,80 @@ minetest.register_node("skylands:stone_with_diamond", {
 	drop = "default:diamond",
 	sounds = default.node_sound_stone_defaults(),
 })
-minetest.register_node("skylands:mineral_tin", {
-	description = "Tin Ore",
-	tiles = {"default_stone.png^moreores_mineral_tin.png"},
-	groups = {cracky=3, skyores=1},
-	sounds = default_stone_sounds,
-	drop = "moreores:tin_lump"
-})
-minetest.register_node("skylands:mineral_silver", {
-	description = "Silver Ore",
-	tiles = {"default_stone.png^moreores_mineral_silver.png"},
-	groups = {cracky=3, skyores=1},
-	sounds = default_stone_sounds,
-	drop = "moreores:silver_lump"
-})
-minetest.register_node("skylands:mineral_mithril", {
-	description = "Mithril Ore",
-	tiles = {"default_stone.png^moreores_mineral_mithril.png"},
-	groups = {cracky=3, skyores=1},
-	sounds = default_stone_sounds,
-	drop = "moreores:mithril_lump"
-})
+
+--moreores
+if (mores) then
+	minetest.register_node("skylands:mineral_tin", {
+		description = "Tin Ore",
+		tiles = {"default_stone.png^moreores_mineral_tin.png"},
+		groups = {cracky=3, skyores=1},
+		sounds = default_stone_sounds,
+		drop = "moreores:tin_lump"
+	})
+	minetest.register_node("skylands:mineral_silver", {
+		description = "Silver Ore",
+		tiles = {"default_stone.png^moreores_mineral_silver.png"},
+		groups = {cracky=3, skyores=1},
+		sounds = default_stone_sounds,
+		drop = "moreores:silver_lump"
+	})
+	minetest.register_node("skylands:mineral_mithril", {
+		description = "Mithril Ore",
+		tiles = {"default_stone.png^moreores_mineral_mithril.png"},
+		groups = {cracky=3, skyores=1},
+		sounds = default_stone_sounds,
+		drop = "moreores:mithril_lump"
+	})
+end
 
 --technic ores
-minetest.register_node( "skylands:mineral_uranium", {
-	description = "Uranium Ore",
-	tiles = { "default_stone.png^technic_mineral_uranium.png" },
-	is_ground_content = true,
-	groups = {cracky=3, radioactive=1, skyores=1},
-	sounds = default.node_sound_stone_defaults(),
-	drop = 'craft "technic:uranium" 1',
-}) 
+if (tech) then
+	minetest.register_node( "skylands:mineral_uranium", {
+		description = "Uranium Ore",
+		tiles = { "default_stone.png^technic_mineral_uranium.png" },
+		is_ground_content = true,
+		groups = {cracky=3, radioactive=1, skyores=1},
+		sounds = default.node_sound_stone_defaults(),
+		drop = 'craft "technic:uranium" 1',
+	}) 
 
-minetest.register_node( "skylands:mineral_chromium", {
-	description = "Chromium Ore",
-	tiles = { "default_stone.png^technic_mineral_chromium.png" },
-	is_ground_content = true,
-	groups = {cracky=3, skyores=1},
-	sounds = default.node_sound_stone_defaults(),
-	drop = 'craft "technic:chromium_lump" 1',
-}) 
+	minetest.register_node( "skylands:mineral_chromium", {
+		description = "Chromium Ore",
+		tiles = { "default_stone.png^technic_mineral_chromium.png" },
+		is_ground_content = true,
+		groups = {cracky=3, skyores=1},
+		sounds = default.node_sound_stone_defaults(),
+		drop = 'craft "technic:chromium_lump" 1',
+	}) 
 
-minetest.register_node( "skylands:mineral_zinc", {
-	description = "Zinc Ore",
-	tile_images = { "default_stone.png^technic_mineral_zinc.png" },
-	is_ground_content = true,
-	groups = {cracky=3, skyores=1},
-	sounds = default.node_sound_stone_defaults(),
-	drop = 'craft "technic:zinc_lump" 1',
-})
+	minetest.register_node( "skylands:mineral_zinc", {
+		description = "Zinc Ore",
+		tile_images = { "default_stone.png^technic_mineral_zinc.png" },
+		is_ground_content = true,
+		groups = {cracky=3, skyores=1},
+		sounds = default.node_sound_stone_defaults(),
+		drop = 'craft "technic:zinc_lump" 1',
+	})
+end
 
 --Skylands-specific ores
 
 --Silicon
+if (mcons) then
+	minetest.register_node("skylands:sky_silicon", {
+		description = "Silicon ore",
+		tiles = {"default_stone.png^skylands_mineral_silicon.png"},
+		groups = {cracky = 3, stone = 1, skyores=1},
+		drop = "mesecons_materials:silicon",
+	})
 
-minetest.register_node("skylands:sky_silicon", {
-	description = "Silicon ore",
-	tiles = {"default_stone.png^skylands_mineral_silicon.png"},
-	groups = {cracky = 3, stone = 1, skyores=1},
-	drop = "mesecons_materials:silicon",
-})
-
-minetest.register_node("skylands:mineral_silicon", {
-	description = "Silicon ore",
-	tiles = {"default_stone.png^skylands_mineral_silicon.png"},
-	groups = {cracky = 3, stone = 1},
-	drop = "mesecons_materials:silicon",
-})
+	minetest.register_node("skylands:mineral_silicon", {
+		description = "Silicon ore",
+		tiles = {"default_stone.png^skylands_mineral_silicon.png"},
+		groups = {cracky = 3, stone = 1},
+		drop = "mesecons_materials:silicon",
+	})
+end
 
 --Cavorite
 
