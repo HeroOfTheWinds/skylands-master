@@ -3,6 +3,45 @@ minetest.register_craftitem("skylands:cavorite_handle", {
 	inventory_image = "skylands_cavorite_handle.png",
 })
 
+minetest.register_craftitem("skylands:hallowed_air", {
+	description = "Hallowed Air",
+	inventory_image = "skylands_hallowed_air.png",
+})
+
+minetest.register_craftitem("skylands:cavorite_jar", {
+	description = "Cavorite Jar",
+	inventory_image = "skylands_cavorite_jar.png",
+	stack_max = 1,
+	on_use = function(itemstack, user, pointed_thing)
+		if (minetest.find_node_near(user:getpos(), 6, {"skylands:quartz_pillar"}) and user:getpos().y >= 8000) then
+			return "skylands:hallowed_air"
+		end	
+		return "skylands:cavorite_jar"
+	end,
+})
+
+minetest.register_craftitem("skylands:holy_hilt", {
+	description = "Holy Sword Hilt",
+	inventory_image = "skylands_holy_hilt.png",
+})
+
+--
+-- HERE IT IS
+-- THE HOLY AIR SWORD!!!!
+--
+minetest.register_tool("skylands:air_sword", {
+	description = "Air Sword",
+	inventory_image = "skylands_tool_airsword.png",
+	tool_capabilities = {
+		full_punch_interval = 0.1,
+		max_drop_level=1,
+		groupcaps={
+			snappy={times={[1]=0.2, [2]=0.1, [3]=0.05}, uses=999, maxlevel=3},
+		},
+		damage_groups = {fleshy=999},
+	}
+})
+
 --
 -- Picks
 --
@@ -321,6 +360,36 @@ minetest.register_tool("skylands:cavorite_sword_diamond", {
 --- Crafting
 ---
 
+--cavorite jar, used to hold hallowed air
+minetest.register_craft({
+	output = "skylands:cavorite_jar",
+	recipe = {
+		{"skylands:cavorite", "", "skylands:cavorite"},
+		{"skylands:cavorite", "", "skylands:cavorite"},
+		{"skylands:cavorite", "skylands:cavorite", "skylands:cavorite"},
+	}
+})
+
+--holy sword hilt, only possible hilt for the air sword
+minetest.register_craft({
+	output = "skylands:holy_hilt",
+	recipe = {
+		{"default:diamond", "skylands:cavorite", "default:diamond"},
+		{"", "default:gold_ingot", ""},
+		{"", "default:diamond", ""},
+	}
+})
+
+--The Holy Air Sword
+minetest.register_craft({
+	output = "skylands:air_sword",
+	recipe = {
+		{"skylands:hallowed_air"},
+		{"skylands:hallowed_air"},
+		{"skylands:holy_hilt"},
+	}
+})
+
 --cavorite handle, base of all tool upgrades
 minetest.register_craft({
 	output = "skylands:cavorite_handle",
@@ -549,7 +618,7 @@ minetest.register_craft({
 
 --check to add wear to crafts when previous tool was worn
 minetest.register_on_craft(function(itemstack, player, old_craft_grid, craft_inv)
-	if string.find(itemstack:get_name(), "cavorite") then --either cavorite_handle or a cavorite tool
+	if string.find(itemstack:get_name(), "cavorite") and (itemstack:get_name() ~= "skylands:cavorite_jar") and (itemstack:get_name() ~= "skylands:cavorite_handle") then --either cavorite_handle or a cavorite tool
 		local wear = 0 --store wear
 		local old_tool = false --store old tool used
 		--loop through old crafting grid to find old tool
